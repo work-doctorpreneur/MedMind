@@ -242,14 +242,14 @@ Deno.serve(async (req) => {
             )
         }
 
-        // Get embeddings with summaries for these documents - ORDERED BY CHUNK INDEX
+        // Get embeddings with summaries for these documents
         const docIds = documents.map(d => d.id)
         const { data: embeddings, error: embError } = await supabase
             .from('embeddings')
-            .select('content, chunk_text, summary, tags, document_id, chunk_index')
+            .select('chunk_text, summary, tags, document_id, created_at')
             .in('document_id', docIds)
             .order('document_id', { ascending: true })
-            .order('chunk_index', { ascending: true })
+            .order('created_at', { ascending: true })
 
         // Log the error but continue
         if (embError) {
@@ -291,7 +291,7 @@ Deno.serve(async (req) => {
                 // Then add content in order, respecting max length
                 context += `\n### Content:\n`
                 docEmbeddings.forEach(emb => {
-                    const contentText = emb.chunk_text || emb.content || ''
+                    const contentText = emb.chunk_text || ''
                     if (contentText && totalContentLength < MAX_CONTENT_LENGTH) {
                         const remainingSpace = MAX_CONTENT_LENGTH - totalContentLength
                         const chunkToAdd = contentText.substring(0, remainingSpace)
