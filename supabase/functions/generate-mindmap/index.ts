@@ -10,7 +10,7 @@ const corsHeaders = {
 interface MindMapNode {
     id: string;
     label: string;
-    type: 'central' | 'category' | 'concept';
+    type: 'central' | 'category' | 'concept' | 'detail';
 }
 
 interface MindMapEdge {
@@ -36,7 +36,6 @@ function extractAndParseJSON(text: string): any {
     jsonStr = jsonStr.replace(/(\{|\,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
 
     // 3. Replace single quotes with double quotes for strings
-    // This is tricky, so we do it carefully
     jsonStr = jsonStr.replace(/:\s*'([^']*)'/g, ':"$1"');
 
     // 4. Remove any control characters that might break parsing
@@ -46,7 +45,6 @@ function extractAndParseJSON(text: string): any {
     const openBrackets = (jsonStr.match(/\[/g) || []).length;
     const closeBrackets = (jsonStr.match(/\]/g) || []).length;
     if (openBrackets > closeBrackets) {
-        // Try to close unclosed arrays
         jsonStr = jsonStr.replace(/,?\s*$/, '');
         for (let i = 0; i < openBrackets - closeBrackets; i++) {
             jsonStr += ']';
@@ -151,28 +149,67 @@ Deno.serve(async (req) => {
         // Collect content for analysis
         const summaries = embeddings.filter((e: any) => e.summary).map((e: any) => e.summary);
         const allTags = [...new Set(embeddings.flatMap((e: any) => e.tags || []))] as string[];
-        const contentSample = embeddings.slice(0, 5).map((e: any) => e.chunk_text).join('\n\n');
+        const contentSample = embeddings.slice(0, 10).map((e: any) => e.chunk_text).join('\n\n');
 
-        const prompt = `Analyze the following content and create a mind map structure.
+        const prompt = `**MIND MAP CREATION TASK**
 
-Document summaries:
+Create a detailed, hierarchical mind map based strictly on the provided document content below. This mind map must serve as a complete study and review tool.
+
+---
+
+## DOCUMENT CONTENT TO ANALYZE:
+
+**Document summaries:**
 ${summaries.join('\n')}
 
-Existing tags: ${allTags.join(', ')}
+**Existing tags:** ${allTags.join(', ')}
 
-Content sample:
-${contentSample.slice(0, 4000)}
+**Content:**
+${contentSample.slice(0, 8000)}
 
-Generate a mind map with:
-1. A central node representing the main theme
-2. 3-5 category nodes (main topics)
-3. 2-4 concept nodes under each category (specific ideas/details)
+---
 
-CRITICAL: Return ONLY valid JSON, no markdown code blocks, no extra text.
-Return this exact structure:
-{"centralLabel": "Main Theme", "categories": [{"name": "Category 1", "concepts": ["Concept A", "Concept B"]}, {"name": "Category 2", "concepts": ["Concept C", "Concept D"]}]}
+## STRICT RULES:
 
-Be specific and use actual terms from the content. Keep labels SHORT (under 30 chars).`;
+**1. CONTENT ACCURACY & COMPLETENESS**
+- Include EVERY major topic, concept, and significant point from the document
+- Use ONLY information explicitly stated in the document - NO external knowledge
+- Do NOT invent, assume, or extrapolate points not present in the document
+- Use the document's exact terminology where possible
+
+**2. HIERARCHICAL STRUCTURE (3-5 levels)**
+- Level 1 (Center): Main topic/subject (1-3 words)
+- Level 2 (Main Branches): 3-8 major categories/themes - fundamentally different aspects
+- Level 3 (Sub-branches): 2-6 sub-topics per main branch - more specific concepts
+- Level 4 (Details): Specific facts, examples, supporting points
+- Level 5 (Fine details): Only if document provides this depth
+
+**3. MUTUAL EXCLUSIVITY - CRITICAL**
+- Each branch at the same level must represent a DISTINCT, separate concept
+- Sibling branches must NOT overlap in meaning or content
+- Do NOT repeat the same information in multiple places
+- If a concept relates to multiple areas, place it under the MOST logical parent ONLY
+- A topic should appear EXACTLY ONCE in the entire mind map
+
+**4. FORMATTING**
+- Use KEYWORDS and SHORT PHRASES only (2-6 words maximum per node)
+- Maintain PARALLEL STRUCTURE within the same level
+- Use the EXACT terminology from the document
+
+---
+
+## REQUIRED OUTPUT FORMAT (JSON ONLY):
+
+Return ONLY valid JSON, no markdown, no extra text. Use this exact structure with up to 4 levels of depth:
+
+{"centralLabel": "Main Topic", "branches": [{"name": "Main Branch 1", "children": [{"name": "Sub-topic 1.1", "children": [{"name": "Detail 1.1.1"}, {"name": "Detail 1.1.2"}]}, {"name": "Sub-topic 1.2", "children": [{"name": "Detail 1.2.1"}]}]}, {"name": "Main Branch 2", "children": [{"name": "Sub-topic 2.1"}, {"name": "Sub-topic 2.2", "children": [{"name": "Detail 2.2.1"}]}]}]}
+
+**QUALITY CHECKLIST before output:**
+- [ ] All major topics included, no omissions
+- [ ] No overlapping branches at same level
+- [ ] Each concept appears ONLY ONCE
+- [ ] Concise keywords (2-6 words)
+- [ ] Hierarchy flows from general to specific`;
 
         let mindMapData: any;
         let usedFallback = false;
@@ -198,7 +235,7 @@ Be specific and use actual terms from the content. Keep labels SHORT (under 30 c
             );
         }
 
-        // Convert to nodes and edges format
+        // Convert to nodes and edges format with support for deeper hierarchy
         const nodes: MindMapNode[] = [];
         const edges: MindMapEdge[] = [];
 
@@ -209,31 +246,32 @@ Be specific and use actual terms from the content. Keep labels SHORT (under 30 c
             type: 'central'
         });
 
-        // Category and concept nodes
-        const categories = mindMapData.categories || [];
-        categories.forEach((cat: any, catIndex: number) => {
-            if (!cat || !cat.name) return;
+        // Recursive function to process branches at any depth
+        function processBranch(branch: any, parentId: string, level: number, indexPath: string) {
+            if (!branch || !branch.name) return;
 
-            const catId = `cat-${catIndex}`;
+            const nodeId = `node-${indexPath}`;
+            const nodeType = level === 2 ? 'category' : level === 3 ? 'concept' : 'detail';
+            
             nodes.push({
-                id: catId,
-                label: String(cat.name).substring(0, 40),
-                type: 'category'
+                id: nodeId,
+                label: String(branch.name).substring(0, 40),
+                type: nodeType as 'category' | 'concept' | 'detail'
             });
-            edges.push({ source: 'central', target: catId });
+            edges.push({ source: parentId, target: nodeId });
 
-            const concepts = cat.concepts || [];
-            concepts.forEach((concept: any, conceptIndex: number) => {
-                if (!concept) return;
-
-                const conceptId = `concept-${catIndex}-${conceptIndex}`;
-                nodes.push({
-                    id: conceptId,
-                    label: String(concept).substring(0, 40),
-                    type: 'concept'
+            // Process children recursively
+            if (branch.children && Array.isArray(branch.children)) {
+                branch.children.forEach((child: any, childIndex: number) => {
+                    processBranch(child, nodeId, level + 1, `${indexPath}-${childIndex}`);
                 });
-                edges.push({ source: catId, target: conceptId });
-            });
+            }
+        }
+
+        // Process all main branches
+        const branches = mindMapData.branches || mindMapData.categories || [];
+        branches.forEach((branch: any, branchIndex: number) => {
+            processBranch(branch, 'central', 2, `${branchIndex}`);
         });
 
         console.log('Generated mind map with', nodes.length, 'nodes and', edges.length, 'edges');
