@@ -1785,9 +1785,9 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             {
                 showReportModal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-card dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] mx-4 flex flex-col overflow-hidden">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] mx-4 flex flex-col overflow-hidden">
                             {/* Header */}
-                            <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600">
+                            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-white/20 rounded-lg">
                                         <FileBarChart className="w-5 h-5 text-white" />
@@ -1810,17 +1810,17 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                             </div>
 
                             {/* Report Content */}
-                            <div className="flex-1 overflow-auto p-6">
+                            <div className="flex-1 overflow-auto p-6 bg-white dark:bg-slate-800">
                                 {isLoadingReport ? (
                                     <div className="h-full flex items-center justify-center">
                                         <div className="text-center">
                                             <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-                                            <p className="text-slate-600">Generating your report...</p>
-                                            <p className="text-sm text-slate-400 mt-1">This may take a moment</p>
+                                            <p className="text-slate-600 dark:text-slate-300">Generating your report...</p>
+                                            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">This may take a moment</p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="prose prose-slate max-w-none">
+                                    <div className="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-slate-100">
                                         {renderMarkdown(reportContent)}
                                     </div>
                                 )}
@@ -1828,7 +1828,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
                             {/* Footer Actions */}
                             {!isLoadingReport && reportContent && (
-                                <div className="p-4 border-t bg-slate-50 flex items-center justify-between">
+                                <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
                                     <Button
                                         variant="outline"
                                         onClick={() => {
