@@ -38,7 +38,8 @@ import {
     Clock,
     Download,
     Copy,
-    Printer
+    Printer,
+    PenTool
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
@@ -138,7 +139,7 @@ const reportTypes = [
     { id: 'briefing', label: 'Briefing Doc', description: 'Executive summary with key points', icon: FileText },
     { id: 'study_guide', label: 'Study Guide', description: 'Comprehensive learning material', icon: GraduationCap },
     { id: 'faq', label: 'FAQ', description: 'Questions and answers', icon: HelpCircle },
-    { id: 'timeline', label: 'Timeline', description: 'Chronological events', icon: Clock },
+    { id: 'blog_post', label: 'Blog Post', description: 'Engaging article format', icon: PenTool },
 ]
 
 interface NotebookWorkspaceContentProps {
