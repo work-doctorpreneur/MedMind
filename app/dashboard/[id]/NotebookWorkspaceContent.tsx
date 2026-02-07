@@ -1878,7 +1878,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                     </div>
                                     <div>
                                         <h2 className="text-lg font-bold text-white">
-                                            {reportTypes.find(t => t.id === reportType)?.label || 'Report'}
+                                            {reportType === 'faq' ? 'FAQ' : (reportTypes.find(t => t.id === reportType)?.label || 'Report')}
                                         </h2>
                                         <p className="text-xs text-white/80">Generated from your documents</p>
                                     </div>

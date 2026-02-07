@@ -71,28 +71,25 @@ const reportPrompts: Record<string, string> = {
 - Each concept should be explained thoroughly
 - Maintain logical progression through the material`,
 
-    faq: `You are an expert communicator and knowledge synthesizer specializing in making complex information accessible through question-and-answer formats. Create a comprehensive FAQ (Frequently Asked Questions) document that anticipates and answers the most important questions a reader would have about the source materials.
+    faq: `You are an expert communicator and knowledge synthesizer specializing in making complex information accessible through question-and-answer formats. Create a comprehensive FAQ (Frequently Asked Questions) document that covers THE ENTIRE source document thoroughly.
 
-**Objective:** Transform dense or complex source content into an intuitive, scannable Q&A format that serves as both a quick reference guide and a learning tool. Think of this as the resource someone would want when they need specific answers fast.
+**CRITICAL: FULL DOCUMENT COVERAGE**
+This FAQ must cover the ENTIRE document from beginning to end - every major topic, every chapter, every significant concept. Do NOT skip any sections. Treat this as creating a complete reference guide.
+
+**Objective:** Transform the COMPLETE source content into an intuitive, scannable Q&A format that serves as both a complete reference guide and a learning tool. This should be as comprehensive as a study guide.
 
 **Structure Requirements:**
 
 **Introduction** (100-150 words): 
 - Brief overview of what topics/themes the FAQ covers
 - Who this FAQ is designed for (target audience)
-- How to best use this document (can be read sequentially or used for spot-checking)
+- How to best use this document
 
 **Question Categories:**
-Organize questions into 4-6 thematic categories with clear headings. Example categories might include:
-- "Understanding the Basics"
-- "Key Concepts and Terminology"
-- "Practical Applications"
-- "Common Misconceptions"
-- "Advanced Topics"
-- "Implementation and Next Steps"
+Organize questions into 5-8 thematic categories with clear headings based on the document's structure. Create a category for each major section or chapter of the source document.
 
-**Question Development:**
-Create 15-25 questions total that represent:
+**MANDATORY: Generate 30-50 Questions Total**
+You MUST generate at least 30 questions and no more than 50 questions. Distribute questions across ALL parts of the document:
 - **Foundational questions** (30%): "What is...?", "Why does...?", "How does... work?"
 - **Clarifying questions** (25%): "What's the difference between...?", "Is it true that...?"
 - **Application questions** (25%): "How can I...?", "When should...?", "What are best practices for...?"
@@ -103,43 +100,35 @@ Each answer should:
 - **Be direct and complete** (100-250 words): Start with a clear, one-sentence direct answer, then elaborate with context, examples, or qualifications
 - **Use layered information**: Essential answer first, then supporting details, then additional nuance
 - **Include examples** where they clarify abstract concepts
-- **Reference sources** when making specific claims (e.g., "According to [Source]...")
-- **Cross-reference related questions** when helpful (e.g., "See also: Question 12")
-- **Use formatting**: Bold key phrases, use bullet points for lists within answers, employ short paragraphs
+- **Reference sources** when making specific claims
+- **Use formatting**: Bold key phrases, use bullet points for lists within answers
 
 **Question Phrasing:**
 - Write questions exactly as a real person would ask them (conversational, natural)
 - Vary question types: use What, How, Why, When, Should, Can, Is, Does
 - Front-load the most important questions in each category
-- Include at least 2-3 "myth-busting" questions that address common misconceptions
-- Add 1-2 meta-questions like "What are the most important takeaways?" or "Where should I go to learn more?"
-
-**Special Sections:**
-
-**Quick Reference Box** (at the top): Include 3-5 "need-to-know" facts or numbers that readers most commonly search for
-
-**Glossary Integration**: When introducing technical terms in answers, provide brief inline definitions in parentheses or link to a mini-glossary at the end
-
-**Additional Resources** (at the end): Suggest 2-3 related questions not covered in the FAQ or point to sections of the source materials for deeper dives
+- Include at least 3-5 "myth-busting" questions that address common misconceptions
+- Add meta-questions like "What are the most important takeaways?"
 
 **Tone & Style:**
 - Approachable and helpful, like a knowledgeable colleague answering questions
 - Clear and jargon-free unless technical terms are necessary (then define them)
 - Patient and non-condescending—no question is "too basic"
 - Confident and authoritative in answers
-- Empathetic to reader confusion or concerns
 
 **Formatting for Scannability:**
 - Use clear visual hierarchy: Category headings (H2), Questions (H3, bold), Answers (regular text)
 - Number questions within categories (e.g., 1.1, 1.2, 2.1, 2.2) for easy reference
 - Add extra whitespace between Q&A pairs
-- Consider a table of contents at the top for longer FAQs (20+ questions)
+- Include a table of contents at the top
 
-**Length:** 2000-3000 words total (including questions and answers)
+**Length:** 4000-6000 words total (you need 30-50 questions with detailed answers)
 
 **CRITICAL REQUIREMENTS:**
-- Cover ALL major topics from the source documents
-- Ensure comprehensiveness: cover questions 80% of readers would actually ask
+- Generate MINIMUM 30 questions, MAXIMUM 50 questions
+- Cover EVERY major topic from the source documents - beginning to end
+- Ensure comprehensiveness: cover ALL sections of the document
+- Do NOT skip any chapter, section, or significant topic
 - All answers must be fully supported by the source materials`,
 
     blog_post: `You are a skilled content creator and storytelling expert writing for a modern digital publication that values intellectual depth presented with engaging accessibility—think Medium, Substack, or The Atlantic's digital format.
@@ -256,12 +245,13 @@ Deno.serve(async (req) => {
             console.error('Embeddings fetch error:', embError)
         }
 
-        // Build document context with MUCH MORE content
+        // Build document context - use MORE content for FAQ to cover entire document
         const docMap = new Map(documents.map(d => [d.id, d.filename]))
         let context = ''
         const allTags = new Set<string>()
         let totalContentLength = 0
-        const MAX_CONTENT_LENGTH = 25000 // Increased from 2000 to 25000 chars
+        // For FAQ, use much higher limit to get full document content
+        const MAX_CONTENT_LENGTH = report_type === 'faq' ? 150000 : 25000
 
         if (embeddings && embeddings.length > 0) {
             // Group embeddings by document for better organization
