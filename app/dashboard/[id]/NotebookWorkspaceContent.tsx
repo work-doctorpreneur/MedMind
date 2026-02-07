@@ -575,8 +575,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             const { data: result, error } = await supabase.functions.invoke('generate-flashcards', {
                 body: {
                     notebook_id: notebookId,
-                    user_id: userId,
-                    count: 10
+                    user_id: userId
                 }
             })
 
