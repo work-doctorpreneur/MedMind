@@ -42,7 +42,10 @@ import {
     PenTool,
     Zap,
     Flame,
-    MessageSquareQuote
+    MessageSquareQuote,
+    BookOpen,
+    Lightbulb,
+    Brain
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
@@ -140,9 +143,10 @@ const audioTypes = [
 ]
 
 const reportTypes = [
-    { id: 'briefing', label: 'Briefing Doc', description: 'Executive summary with key points', icon: FileText },
-    { id: 'study_guide', label: 'Study Guide', description: 'Comprehensive learning material', icon: GraduationCap },
-    { id: 'blog_post', label: 'Blog Post', description: 'Engaging article format', icon: PenTool },
+    { id: 'normal_explanation', label: 'Normal Explanation', description: 'Clear explanations of all concepts', icon: FileText },
+    { id: 'story_format', label: 'Story Format', description: 'Concepts explained through stories', icon: BookOpen },
+    { id: 'practical_application', label: 'Practical Application', description: 'Real-world applications', icon: Lightbulb },
+    { id: 'mnemonics', label: 'Mnemonics', description: 'Memory aids for all concepts', icon: Brain },
 ]
 
 interface NotebookWorkspaceContentProps {

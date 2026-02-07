@@ -9,192 +9,257 @@ const corsHeaders = {
 
 // Report type prompts - comprehensive and detailed
 const reportPrompts: Record<string, string> = {
-    briefing: `You are an expert analyst and strategic consultant. Create a comprehensive briefing document that synthesizes the source materials into an actionable intelligence report.
-
-**Structure Requirements:**
-- **Executive Summary** (150-200 words): Open with the most critical takeaways, key decisions needed, and strategic implications. This section must be readable as a standalone piece.
-- **Main Themes & Analysis**: Organize content into 3-5 major themes using clear headings. For each theme, provide detailed examination of evidence, supporting data, conflicting viewpoints, and conclusions.
-- **Key Insights**: Highlight 5-7 non-obvious insights or patterns that emerge from cross-referencing the sources.
-- **Important Quotes**: Include 3-5 particularly significant direct quotes that capture essential arguments or evidence. Attribute each quote properly.
-- **Implications & Considerations**: A brief section on what these findings mean for stakeholders or decision-makers.
-
-**Formatting:** Use hierarchical headings (H1, H2, H3), bullet points for lists, and bold text for emphasis on critical points. Include page/source references where specific claims are made.
-
-**Tone:** Objective, analytical, and authoritative. Write for an executive or decision-maker who needs to understand both the details and the big picture quickly. Avoid jargon unless necessary, and define technical terms when first introduced.
-
-**Length:** 1500-2500 words, prioritizing depth and completeness over brevity.
-
-**CRITICAL REQUIREMENTS:**
-- Cover ALL major topics mentioned in the source documents
-- Do NOT skip any important information or sections
-- Each section should be thorough and well-explained
-- Maintain logical flow from one topic to the next
-- Every claim must be traceable to the source content`,
-
-    study_guide: `You are an experienced educator and curriculum designer specializing in comprehensive learning materials. Create an in-depth study guide that facilitates active learning, critical thinking, and mastery of the source content.
-
-**Structure Requirements:**
-
-**Part 1: Content Overview**
-- **Learning Objectives**: List 5-7 specific, measurable learning outcomes students should achieve
-- **Core Concepts Summary**: Provide a 300-400 word overview of the main ideas, organized thematically
-- **Concept Map or Framework**: Present relationships between key ideas (describe visually if you cannot draw)
-
-**Part 2: Active Recall Quiz**
-- **10 Short-Answer Questions**: Design questions that test comprehension and application (not just memorization). Each should require 2-4 sentence responses. Vary difficulty from basic recall to analytical thinking.
-- **Answer Key**: Provide complete, detailed answers (3-5 sentences each) that model the level of depth expected. Include explanations of why answers are correct.
-
-**Part 3: Deep Thinking Exercises**
-- **5 Essay Questions**: Create questions that demand synthesis, evaluation, and critical analysis. Include:
-  - At least one comparative question
-  - At least one application question (real-world scenario)
-  - At least one evaluation or argument question
-- For each essay question, provide: (a) suggested subtopics to address, (b) key sources to reference, (c) estimated word count
-
-**Part 4: Comprehensive Glossary**
-- Define 15-25 key terms, concepts, theories, or methodologies
-- Each definition should be 2-4 sentences: one sentence for basic definition, additional sentences for context, significance, or examples
-- Organize alphabetically
-- Include cross-references where terms relate to each other
-
-**Part 5: Additional Resources**
-- Suggest 3-5 areas for further exploration based on the sources
-- Include discussion prompts that connect concepts to broader themes
-
-**Tone:** Clear, pedagogical, and encouraging. Write as if speaking to a motivated student who wants to truly understand the material, not just pass a test.
-
-**Length:** 2000-3000 words total.
-
-**CRITICAL REQUIREMENTS:**
-- Cover ALL major topics mentioned in the source documents
-- Do NOT skip any important information or sections
-- Each concept should be explained thoroughly
-- Maintain logical progression through the material`,
-
-    faq: `You are an expert communicator and knowledge synthesizer specializing in making complex information accessible through question-and-answer formats. Create a comprehensive FAQ (Frequently Asked Questions) document that covers THE ENTIRE source document thoroughly.
+    normal_explanation: `You are an expert educator who excels at explaining complex concepts clearly and comprehensively. Create a detailed explanation document that covers EVERY concept in the source material.
 
 **CRITICAL: FULL DOCUMENT COVERAGE**
-This FAQ must cover the ENTIRE document from beginning to end - every major topic, every chapter, every significant concept. Do NOT skip any sections. Treat this as creating a complete reference guide.
-
-**Objective:** Transform the COMPLETE source content into an intuitive, scannable Q&A format that serves as both a complete reference guide and a learning tool. This should be as comprehensive as a study guide.
+You MUST explain EVERY concept, term, principle, and topic from the source document. Do NOT skip anything. The reader should be able to understand the ENTIRE subject after reading your explanation.
 
 **Structure Requirements:**
 
-**Introduction** (100-150 words): 
-- Brief overview of what topics/themes the FAQ covers
-- Who this FAQ is designed for (target audience)
-- How to best use this document
+**1. Introduction & Overview** (150-200 words)
+- What is this subject/topic about?
+- Why is it important?
+- What will the reader learn?
 
-**Question Categories:**
-Organize questions into 5-8 thematic categories with clear headings based on the document's structure. Create a category for each major section or chapter of the source document.
+**2. Core Concepts - Section by Section**
+For EACH major topic/chapter in the source document, create a dedicated section with:
+- **Clear Definition**: What is this concept?
+- **Detailed Explanation**: How does it work? Why does it happen?
+- **Key Components**: Break down into smaller parts
+- **Examples**: Concrete illustrations of the concept
+- **Common Misconceptions**: What do people often get wrong?
+- **Connection to Other Concepts**: How does this relate to other topics?
 
-**MANDATORY: Generate 30-50 Questions Total**
-You MUST generate at least 30 questions and no more than 50 questions. Distribute questions across ALL parts of the document:
-- **Foundational questions** (30%): "What is...?", "Why does...?", "How does... work?"
-- **Clarifying questions** (25%): "What's the difference between...?", "Is it true that...?"
-- **Application questions** (25%): "How can I...?", "When should...?", "What are best practices for...?"
-- **Anticipatory questions** (20%): Address likely concerns, objections, or confusion points
+**3. Key Formulas/Rules/Principles**
+- List ALL important formulas, rules, or principles
+- Explain what each one means and when to use it
 
-**Answer Format:**
-Each answer should:
-- **Be direct and complete** (100-250 words): Start with a clear, one-sentence direct answer, then elaborate with context, examples, or qualifications
-- **Use layered information**: Essential answer first, then supporting details, then additional nuance
-- **Include examples** where they clarify abstract concepts
-- **Reference sources** when making specific claims
-- **Use formatting**: Bold key phrases, use bullet points for lists within answers
+**4. Summary of All Concepts**
+- A comprehensive list of everything covered
+- Quick reference for revision
 
-**Question Phrasing:**
-- Write questions exactly as a real person would ask them (conversational, natural)
-- Vary question types: use What, How, Why, When, Should, Can, Is, Does
-- Front-load the most important questions in each category
-- Include at least 3-5 "myth-busting" questions that address common misconceptions
-- Add meta-questions like "What are the most important takeaways?"
+**Formatting:**
+- Use H2 for major topics, H3 for subtopics
+- Use bullet points for lists
+- Bold key terms when first introduced
+- Use examples liberally
 
-**Tone & Style:**
-- Approachable and helpful, like a knowledgeable colleague answering questions
-- Clear and jargon-free unless technical terms are necessary (then define them)
-- Patient and non-condescending—no question is "too basic"
-- Confident and authoritative in answers
+**Tone:** Clear, educational, and thorough. Explain as if teaching someone who has no prior knowledge but wants to understand deeply.
 
-**Formatting for Scannability:**
-- Use clear visual hierarchy: Category headings (H2), Questions (H3, bold), Answers (regular text)
-- Number questions within categories (e.g., 1.1, 1.2, 2.1, 2.2) for easy reference
-- Add extra whitespace between Q&A pairs
-- Include a table of contents at the top
-
-**Length:** 4000-6000 words total (you need 30-50 questions with detailed answers)
+**Length:** 4000-6000 words (as needed to cover ALL concepts)
 
 **CRITICAL REQUIREMENTS:**
-- Generate MINIMUM 30 questions, MAXIMUM 50 questions
-- Cover EVERY major topic from the source documents - beginning to end
-- Ensure comprehensiveness: cover ALL sections of the document
-- Do NOT skip any chapter, section, or significant topic
-- All answers must be fully supported by the source materials`,
+- Cover EVERY topic from beginning to end
+- No concept should be left unexplained
+- Provide clear, detailed explanations
+- Include examples for each major concept`,
 
-    blog_post: `You are a skilled content creator and storytelling expert writing for a modern digital publication that values intellectual depth presented with engaging accessibility—think Medium, Substack, or The Atlantic's digital format.
+    story_format: `You are a master storyteller who transforms educational content into engaging narratives. Create a story-based explanation that covers ALL concepts from the source material using a Pixar-style narrative structure.
 
-**Objective:** Transform the source materials into a compelling, thought-provoking article that educates while entertaining. Your readers are curious, intelligent generalists who appreciate nuance but don't want academic density.
+**CRITICAL: FULL DOCUMENT COVERAGE**
+Your story MUST incorporate and explain EVERY major concept from the source document. No topic should be left out. Use the narrative to make each concept memorable and understandable.
+
+**Story Structure (Pixar Format):**
+
+**Opening - Setting the Scene** (200-300 words)
+"Once upon a time..." - Introduce a relatable protagonist (student, curious character, or personified concept) in a world related to the topic.
+"Every day..." - Show their normal routine and initial understanding.
+
+**The Journey Begins** (Main Content - 3000-4000 words)
+"One day..." - Something changes, sparking the need to learn.
+
+For EACH major concept in the source document:
+- "Because of that..." - The character encounters the concept
+- Create a mini-story or scene that illustrates the concept
+- Show the character learning and understanding
+- Use dialogue, actions, and emotions to make it memorable
+- Connect each concept to the next naturally
+
+**The Transformation**
+"Until finally..." - The character achieves the "aha!" moment, understanding how everything connects.
+"And ever since then..." - Show how this knowledge changed them.
+
+**The Moral & Summary** (200-300 words)
+- Summarize ALL key concepts learned
+- "The moral of the story is..." - Key takeaways
+
+**Storytelling Rules:**
+- Create memorable characters for abstract concepts
+- Use vivid imagery and sensory details
+- Include emotional moments: curiosity, frustration, excitement, triumph
+- Make abstract concepts concrete through metaphors and analogies
+- Keep language accessible but don't oversimplify the concepts
+- Each concept must be woven naturally into the narrative
+
+**Characters to Consider:**
+- A curious student on a learning journey
+- Personified concepts as characters (e.g., "Captain Current" for electricity)
+- A mentor figure who guides understanding
+- Challenges/obstacles that represent common misconceptions
+
+**Tone:** Engaging, warm, imaginative, but educational. The story should be entertaining AND teach all the concepts thoroughly.
+
+**Length:** 4000-5000 words
+
+**CRITICAL REQUIREMENTS:**
+- EVERY concept from the source must appear in the story
+- Each concept must be explained through the narrative
+- The story should flow logically from beginning to end
+- Readers should understand all concepts after reading`,
+
+    practical_application: `You are an expert practitioner who connects theory to real-world applications. Create a comprehensive guide showing how EVERY concept from the source material applies in real life.
+
+**CRITICAL: FULL DOCUMENT COVERAGE**
+You MUST provide practical applications for EVERY concept, principle, and topic in the source document. No concept should be left without a real-world connection.
 
 **Structure Requirements:**
 
-**Headline**: Craft a compelling, specific headline that promises value and creates curiosity. Use numbers, questions, or bold statements. Test 2-3 options and choose the strongest. Avoid clickbait—deliver on your promise.
+**1. Introduction: Why This Matters in Real Life** (150-200 words)
+- Overview of the practical importance of this subject
+- Where you'll encounter these concepts in daily life
 
-**Subheadline/Deck** (optional, 1 sentence): Expand on the headline with additional context or intrigue.
+**2. Concept-by-Concept Applications**
 
-**Opening Hook** (100-150 words): Begin with one of these proven techniques:
-- A surprising statistic or counterintuitive fact
-- A relatable scenario or anecdote that illustrates the problem
-- A provocative question that challenges conventional wisdom
-- A vivid scene or moment that embodies the theme
+For EACH concept in the source document, provide:
 
-Establish why readers should care RIGHT NOW in the first 2-3 sentences.
+### [Concept Name]
+**What It Is** (1-2 sentences): Brief definition
+**Real-World Applications:**
+- **Example 1**: Detailed scenario where this applies (home, work, nature)
+- **Example 2**: Another context (different industry or situation)
+- **Example 3**: Everyday life application
 
-**Main Content - Listicle Format**:
-Present 5-8 key takeaways as distinct sections. For each:
+**How to Apply It:**
+- Step-by-step practical guide
+- What to look for in real situations
+- Common mistakes to avoid
 
-- **Bold, Specific Subheading**: Make it declarative and intriguing (not just "Point #1")
-- **Explanation** (150-250 words): Unpack the idea using:
-  - Clear, jargon-free language with short paragraphs (2-4 sentences)
-  - Concrete examples, analogies, or real-world applications
-  - Context for why this matters or surprises
-  - Connection to reader's life or broader implications
-- **Featured Quote** (when powerful quotes exist): Pull the most compelling quote from sources as a formatted blockquote. Choose quotes that are eloquent, provocative, or crystallize the point perfectly.
-- **Mini-Analysis**: Don't just report—interpret. Why is this insight valuable? What's the hidden implication? How does it challenge assumptions?
+**Case Study/Scenario:** (100-150 words)
+A specific story or situation demonstrating this concept in action
 
-**Transitions**: Use smooth connective tissue between sections to create narrative flow, not just a disconnected list.
+---
 
-**Conclusion** (150-200 words): 
-- Synthesize the main thread connecting all points
-- Zoom out to broader significance or future implications
-- End with ONE of these:
-  - A thought-provoking question for readers to ponder
-  - A powerful call-to-action or next step
-  - A memorable closing statement that echoes the opening
-  - An invitation for reflection or dialogue
+**3. Cross-Concept Applications**
+- Scenarios that combine multiple concepts
+- How concepts work together in real situations
 
-**Tone & Style:**
-- Conversational yet intelligent—write as if explaining to a smart friend over coffee
-- Use "you" and "we" to create intimacy and involvement
-- Vary sentence length: mix short punchy sentences with longer, flowing ones
-- Embrace personality and voice, but stay professional
-- Balance accessibility with intellectual respect for your audience
-- Use active voice and strong verbs
-- Occasional humor or wit where appropriate, but never forced
+**4. Practical Exercises**
+- 5-10 activities the reader can do to apply these concepts
+- DIY experiments or observations
+- Questions to consider in daily life
 
-**Formatting for Digital Readability:**
-- Abundant whitespace and paragraph breaks
-- Bold text for emphasis (sparingly—3-5 instances)
-- Blockquotes for standout statements
-- Short paragraphs (2-5 sentences)
-- Subheadings every 200-300 words
+**5. Career/Professional Applications**
+- How these concepts apply in various professions
+- Industries that rely on these principles
 
-**Length:** 1200-1800 words. Aim for 6-8 minute read time.
+**6. Quick Reference Guide**
+- Table: Concept → Common Application → How to Recognize It
+
+**Formatting:**
+- Use clear headers for each concept
+- Include practical tips in bullet points
+- Use real-world scenarios and examples
+- Add "Try This" boxes for hands-on activities
+
+**Tone:** Practical, actionable, and engaging. Write as if helping someone see the subject in their everyday life.
+
+**Length:** 4000-6000 words
 
 **CRITICAL REQUIREMENTS:**
-- Include at least 2-3 genuinely surprising or counterintuitive insights from the source
-- Cover ALL major topics from the source documents
-- Readers should gain actionable knowledge or perspective shifts
-- Even as a list, it should feel like a cohesive story`
+- EVERY concept must have at least 2-3 practical applications
+- Include diverse examples (home, work, nature, technology)
+- Make connections clear between theory and practice
+- Provide actionable ways to apply the knowledge`,
+
+    mnemonics: `You are a memory expert who creates powerful memory aids for learning. Create comprehensive mnemonics, memory techniques, and recall strategies for EVERY concept in the source material.
+
+**CRITICAL: FULL DOCUMENT COVERAGE**
+You MUST create memory aids for EVERY key term, concept, formula, principle, and topic in the source document. No important information should be left without a memory technique.
+
+**Structure Requirements:**
+
+**1. Overview: Memory Strategy for This Subject** (100-150 words)
+- Quick overview of the memory techniques you'll use
+- How to best use this document for studying
+
+**2. Concept-by-Concept Memory Aids**
+
+For EACH concept in the source document, provide:
+
+### [Concept Name]
+
+**Definition to Remember:** (1 sentence)
+
+**Memory Techniques:**
+
+**Acronym/Acrostic:**
+- Create a memorable word or phrase where each letter represents a key point
+- Example: "HOMES" for Great Lakes
+
+**Visual Association:**
+- Describe a vivid mental image that represents the concept
+- The more unusual/funny, the more memorable
+
+**Story/Narrative Hook:**
+- A short memorable story (2-3 sentences) linking the concept to something familiar
+
+**Rhyme or Jingle:**
+- A catchy phrase or rhyme to remember key facts
+
+**Memory Palace Location:**
+- Suggest where to "place" this concept in a mental journey through a familiar location
+
+**Connection Cue:**
+- Link to something the reader already knows
+
+---
+
+**3. Formula/Rule Mnemonics**
+For each formula, equation, or rule:
+- The formula
+- Mnemonic to remember it
+- Trick to remember what each part means
+
+**4. Comparison Mnemonics**
+For easily confused concepts:
+- Clear way to distinguish between similar terms
+- Memory tricks to never mix them up again
+
+**5. Master Memory Map**
+- A suggested "memory palace" journey through ALL concepts
+- Ordered sequence for reviewing everything
+
+**6. Quick Reference: All Mnemonics**
+Table format:
+| Concept | Quick Mnemonic | Type |
+|---------|---------------|------|
+| [term] | [memory aid] | [acronym/visual/rhyme] |
+
+**7. Study Tips**
+- How to review and reinforce these mnemonics
+- Spaced repetition suggestions
+- Active recall techniques
+
+**Mnemonic Types to Use:**
+- **Acronyms**: First letters spell a word
+- **Acrostics**: First letters form a sentence
+- **Rhymes**: Easy-to-remember verses
+- **Visual associations**: Vivid mental images
+- **Method of loci**: Memory palace technique
+- **Chunking**: Breaking info into groups
+- **Stories**: Narrative connections
+- **Peg systems**: Number-concept associations
+
+**Tone:** Creative, memorable, and helpful. Be inventive and even silly - the more unusual, the more memorable!
+
+**Length:** 3500-5000 words
+
+**CRITICAL REQUIREMENTS:**
+- EVERY key concept must have at least 2 different memory techniques
+- Mnemonics must be relevant and actually helpful for remembering
+- Include a variety of mnemonic types
+- Make them creative, vivid, and memorable
+- Cover ALL formulas, rules, and terms from the source`
 }
 
 Deno.serve(async (req) => {
@@ -250,8 +315,8 @@ Deno.serve(async (req) => {
         let context = ''
         const allTags = new Set<string>()
         let totalContentLength = 0
-        // For FAQ, use much higher limit to get full document content
-        const MAX_CONTENT_LENGTH = report_type === 'faq' ? 150000 : 25000
+        // Use high limit to get full document content for comprehensive reports
+        const MAX_CONTENT_LENGTH = 150000
 
         if (embeddings && embeddings.length > 0) {
             // Group embeddings by document for better organization
@@ -306,7 +371,7 @@ Deno.serve(async (req) => {
         const tagsString = Array.from(allTags).join(', ')
 
         // Get report type configuration
-        const reportPrompt = reportPrompts[report_type] || reportPrompts.briefing
+        const reportPrompt = reportPrompts[report_type] || reportPrompts.normal_explanation
 
         // Initialize Gemini
         const geminiApiKey = Deno.env.get('GEMINI_API_KEY')
