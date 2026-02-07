@@ -41,7 +41,8 @@ import {
     Printer,
     PenTool,
     Zap,
-    Flame
+    Flame,
+    MessageSquareQuote
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
@@ -130,6 +131,7 @@ const studioActions = [
     { id: "flashcards", icon: GraduationCap, label: "Flashcards", description: "Study key concepts" },
     { id: "quiz", icon: HelpCircle, label: "Quiz", description: "Test your knowledge" },
     { id: "infographic", icon: Image, label: "Infographic", description: "Visual summaries" },
+    { id: "faq", icon: MessageSquareQuote, label: "FAQ", description: "Questions and answers" },
 ]
 
 const audioTypes = [
@@ -140,7 +142,6 @@ const audioTypes = [
 const reportTypes = [
     { id: 'briefing', label: 'Briefing Doc', description: 'Executive summary with key points', icon: FileText },
     { id: 'study_guide', label: 'Study Guide', description: 'Comprehensive learning material', icon: GraduationCap },
-    { id: 'faq', label: 'FAQ', description: 'Questions and answers', icon: HelpCircle },
     { id: 'blog_post', label: 'Blog Post', description: 'Engaging article format', icon: PenTool },
 ]
 
@@ -908,6 +909,10 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
         }
         if (actionId === 'audio') {
             setShowAudioTypeSelector(true)
+            return
+        }
+        if (actionId === 'faq') {
+            generateReport('faq')
             return
         }
 
