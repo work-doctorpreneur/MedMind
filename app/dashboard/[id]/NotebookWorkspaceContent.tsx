@@ -39,7 +39,9 @@ import {
     Download,
     Copy,
     Printer,
-    PenTool
+    PenTool,
+    Zap,
+    Flame
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
@@ -185,6 +187,8 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
     const [selectedQuizAnswer, setSelectedQuizAnswer] = useState<string | null>(null)
     const [isQuizAnswered, setIsQuizAnswered] = useState(false)
     const [quizScore, setQuizScore] = useState(0)
+    const [showQuizDifficultySelector, setShowQuizDifficultySelector] = useState(false)
+    const [quizDifficulty, setQuizDifficulty] = useState<string>('medium')
 
     // Mind Map State
     const [mindMapNodes, setMindMapNodes] = useState<Node[]>([])
@@ -589,9 +593,11 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
         }
     }
 
-    const generateQuiz = async () => {
+    const generateQuiz = async (difficulty: string) => {
         if (!userId) return
 
+        setShowQuizDifficultySelector(false)
+        setQuizDifficulty(difficulty)
         setIsLoadingQuiz(true)
         setShowQuizModal(true)
         setCurrentQuizIndex(0)
@@ -605,7 +611,8 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                 body: {
                     notebook_id: notebookId,
                     user_id: userId,
-                    count: 5
+                    count: 20,
+                    difficulty: difficulty
                 }
             })
 
@@ -884,7 +891,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             return
         }
         if (actionId === 'quiz') {
-            generateQuiz()
+            setShowQuizDifficultySelector(true)
             return
         }
         if (actionId === 'mindmap') {
@@ -1728,6 +1735,78 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{type.description}</p>
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Quiz Difficulty Selector Modal */}
+            {
+                showQuizDifficultySelector && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+                            {/* Header */}
+                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-600">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white/20 rounded-lg">
+                                        <HelpCircle className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">Quiz Mode</h2>
+                                        <p className="text-sm text-white/80">Choose difficulty level</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowQuizDifficultySelector(false)}
+                                    className="text-white hover:bg-white/20"
+                                >
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
+
+                            {/* Difficulty Options */}
+                            <div className="p-6 space-y-3">
+                                <button
+                                    onClick={() => generateQuiz('easy')}
+                                    className="w-full p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition-all text-left group flex items-center gap-4"
+                                >
+                                    <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-lg group-hover:bg-green-200 dark:group-hover:bg-green-800">
+                                        <Zap className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-green-600 dark:text-green-400 text-lg">Easy Mode</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">20 basic recall questions</p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => generateQuiz('medium')}
+                                    className="w-full p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-all text-left group flex items-center gap-4"
+                                >
+                                    <div className="p-3 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg group-hover:bg-yellow-200 dark:group-hover:bg-yellow-800">
+                                        <Brain className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-yellow-600 dark:text-yellow-400 text-lg">Medium Mode</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">20 application-based questions</p>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => generateQuiz('hard')}
+                                    className="w-full p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all text-left group flex items-center gap-4"
+                                >
+                                    <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-lg group-hover:bg-red-200 dark:group-hover:bg-red-800">
+                                        <Flame className="w-6 h-6 text-red-600 dark:text-red-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-red-600 dark:text-red-400 text-lg">Hard Mode</h3>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">20 challenging analytical questions</p>
+                                    </div>
+                                </button>
                             </div>
                         </div>
                     </div>
