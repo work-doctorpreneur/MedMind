@@ -43,9 +43,7 @@ import {
     Zap,
     Flame,
     MessageSquareQuote,
-    BookOpen,
-    Lightbulb,
-    Brain
+    Lightbulb
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
