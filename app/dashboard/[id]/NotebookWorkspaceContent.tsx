@@ -2282,7 +2282,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                             <X size={20} />
                         </button>
                         <PricingSection
-                            onSuccess={() => {
+                            onPlanUpdated={() => {
                                 setShowPricingModal(false)
                                 // Refresh user plan
                                 router.refresh()
