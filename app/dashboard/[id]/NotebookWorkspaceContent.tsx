@@ -49,7 +49,6 @@ import Link from "next/link"
 import NextImage from "next/image"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
-import * as pdfjsLib from 'pdfjs-dist'
 import ReactFlow, {
     Node,
     Edge,
@@ -62,14 +61,13 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
-// Set up PDF.js worker
-if (typeof window !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
-}
-
 // Helper to extract text from PDF
 async function extractTextFromPDF(file: File): Promise<string> {
     try {
+        const pdfjsLib = await import('pdfjs-dist')
+        if (typeof window !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`
+        }
         const arrayBuffer = await file.arrayBuffer()
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
         let fullText = ''
