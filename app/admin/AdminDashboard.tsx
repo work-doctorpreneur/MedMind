@@ -45,7 +45,7 @@ type NewDoctor = {
     password: string
 }
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+
 
 export default function AdminDashboard() {
     const router = useRouter()
@@ -71,38 +71,27 @@ export default function AdminDashboard() {
         document.documentElement.classList.toggle("dark", savedDarkMode)
     }, [])
 
-    const getAccessToken = useCallback(async () => {
-        const { data: { session } } = await supabase.auth.getSession()
-        return session?.access_token
-    }, [supabase])
+
 
     const loadUsers = useCallback(async () => {
         setIsLoading(true)
         setError("")
 
-        const token = await getAccessToken()
-        if (!token) {
-            router.push("/")
-            return
-        }
-
         try {
-            const response = await fetch(`${apiUrl}/admin/users`, {
-                headers: { Authorization: `Bearer ${token}` },
-            })
-            const data = await response.json()
+            const { data, error: supabaseError } = await supabase
+                .from('profiles')
+                .select('id, email, first_name, last_name, role, plan, status, created_at')
+                .order('email')
 
-            if (!response.ok) {
-                throw new Error(data.detail || "Unable to load users")
-            }
+            if (supabaseError) throw supabaseError
 
-            setUsers(data.users || [])
+            setUsers(data || [])
         } catch (err) {
             setError(err instanceof Error ? err.message : "Unable to load users")
         } finally {
             setIsLoading(false)
         }
-    }, [getAccessToken, router])
+    }, [supabase])
 
     useEffect(() => {
         loadUsers()
@@ -152,30 +141,19 @@ export default function AdminDashboard() {
         setBusyUserId(userId)
         setError("")
 
-        const token = await getAccessToken()
-        if (!token) {
-            router.push("/")
-            return
-        }
-
         try {
-            const response = await fetch(`${apiUrl}/admin/users/${userId}/status`, {
-                method: "PATCH",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ status }),
-            })
-            const data = await response.json()
+            const { data, error: supabaseError } = await supabase
+                .from('profiles')
+                .update({ status })
+                .eq('id', userId)
+                .select()
+                .single()
 
-            if (!response.ok) {
-                throw new Error(data.detail || "Unable to update user status")
-            }
+            if (supabaseError) throw supabaseError
 
             setUsers((currentUsers) =>
                 currentUsers.map((user) =>
-                    user.id === userId ? { ...user, status: data.user?.status || status } : user
+                    user.id === userId ? { ...user, status: data.status || status } : user
                 )
             )
         } catch (err) {
@@ -189,30 +167,19 @@ export default function AdminDashboard() {
         setBusyUserId(userId)
         setError("")
 
-        const token = await getAccessToken()
-        if (!token) {
-            router.push("/")
-            return
-        }
-
         try {
-            const response = await fetch(`${apiUrl}/admin/users/${userId}/plan`, {
-                method: "PATCH",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ plan }),
-            })
-            const data = await response.json()
+            const { data, error: supabaseError } = await supabase
+                .from('profiles')
+                .update({ plan })
+                .eq('id', userId)
+                .select()
+                .single()
 
-            if (!response.ok) {
-                throw new Error(data.detail || "Unable to update user plan")
-            }
+            if (supabaseError) throw supabaseError
 
             setUsers((currentUsers) =>
                 currentUsers.map((user) =>
-                    user.id === userId ? { ...user, plan: data.user?.plan || plan } : user
+                    user.id === userId ? { ...user, plan: data.plan || plan } : user
                 )
             )
         } catch (err) {
@@ -228,17 +195,10 @@ export default function AdminDashboard() {
         setIsCreating(true)
         setError("")
 
-        const token = await getAccessToken()
-        if (!token) {
-            router.push("/")
-            return
-        }
-
         try {
-            const response = await fetch(`${apiUrl}/admin/users`, {
+            const response = await fetch("/api/admin/users", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(newDoctor),
@@ -246,7 +206,7 @@ export default function AdminDashboard() {
             const data = await response.json()
 
             if (!response.ok) {
-                throw new Error(data.detail || "Unable to create doctor")
+                throw new Error(data.error || "Unable to create doctor")
             }
 
             setShowCreateModal(false)
