@@ -73,77 +73,77 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen flex">
             {/* Left Panel - Branding */}
-            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] p-12 flex-col justify-between relative overflow-hidden">
-                {/* Animated background elements */}
-                <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
-                    <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000"></div>
+            <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden" style={{ background: 'var(--color-surface-dark)' }}>
+                {/* Subtle dark mode background decorations */}
+                <div className="absolute inset-0 opacity-10 pointer-events-none">
+                    <div className="absolute top-20 left-20 w-72 h-72 rounded-full blur-3xl animate-pulse" style={{ background: 'var(--color-on-dark)' }}></div>
+                    <div className="absolute bottom-20 right-20 w-96 h-96 rounded-full blur-3xl animate-pulse delay-1000" style={{ background: 'var(--color-on-dark)' }}></div>
                 </div>
 
                 <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                            <Brain className="w-8 h-8 text-white" />
+                    <div className="flex items-center gap-3 mb-8">
+                        <div className="p-3 rounded-2xl" style={{ background: 'var(--color-surface-dark-elevated)' }}>
+                            <Brain className="w-8 h-8" style={{ color: 'var(--color-on-dark)' }} />
                         </div>
-                        <span className="text-3xl font-bold text-white">MedMind</span>
+                        <span className="typo-display-md" style={{ color: 'var(--color-on-dark)' }}>Mad Mind</span>
                     </div>
-                    <p className="text-white/80 text-lg max-w-md">
+                    <p className="typo-body-md max-w-md" style={{ color: 'var(--color-on-dark-soft)' }}>
                         Your AI-powered medical second brain. Upload documents, get insights, and never miss critical information again.
                     </p>
                 </div>
 
-                <div className="relative z-10 space-y-6">
+                <div className="relative z-10 space-y-8">
                     <div className="flex items-start gap-4">
-                        <div className="p-2 bg-white/20 rounded-xl">
-                            <Sparkles className="w-5 h-5 text-white" />
+                        <div className="p-3 rounded-xl" style={{ background: 'var(--color-surface-dark-elevated)' }}>
+                            <Sparkles className="w-5 h-5" style={{ color: 'var(--color-on-dark)' }} />
                         </div>
                         <div>
-                            <h3 className="text-white font-semibold">AI-Powered Analysis</h3>
-                            <p className="text-white/70 text-sm">Deep insights from your medical documents with precise citations</p>
+                            <h3 className="typo-title-md" style={{ color: 'var(--color-on-dark)' }}>AI-Powered Analysis</h3>
+                            <p className="typo-body-sm" style={{ color: 'var(--color-on-dark-soft)', marginTop: '4px' }}>Deep insights from your medical documents with precise citations</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-4">
-                        <div className="p-2 bg-white/20 rounded-xl">
-                            <Lock className="w-5 h-5 text-white" />
+                        <div className="p-3 rounded-xl" style={{ background: 'var(--color-surface-dark-elevated)' }}>
+                            <Lock className="w-5 h-5" style={{ color: 'var(--color-on-dark)' }} />
                         </div>
                         <div>
-                            <h3 className="text-white font-semibold">HIPAA-Grade Security</h3>
-                            <p className="text-white/70 text-sm">Your data is encrypted and isolated. Only you can access it.</p>
+                            <h3 className="typo-title-md" style={{ color: 'var(--color-on-dark)' }}>HIPAA-Grade Security</h3>
+                            <p className="typo-body-sm" style={{ color: 'var(--color-on-dark-soft)', marginTop: '4px' }}>Your data is encrypted and isolated. Only you can access it.</p>
                         </div>
                     </div>
                 </div>
 
-                <p className="text-white/50 text-sm relative z-10">
-                    © 2026 MedMind. Built for healthcare professionals.
+                <p className="typo-caption relative z-10" style={{ color: 'var(--color-on-dark-soft)' }}>
+                    © 2026 Mad Mind. Built for healthcare professionals.
                 </p>
             </div>
 
             {/* Right Panel - Form */}
-            <div className="flex-1 flex items-center justify-center p-8 bg-background">
-                <Card className="w-full max-w-md border-0 shadow-2xl">
-                    <CardHeader className="space-y-1 text-center pb-2">
-                        <div className="flex justify-center mb-4 lg:hidden">
-                            <div className="p-3 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-2xl">
-                                <Brain className="w-8 h-8 text-white" />
+            <div className="flex-1 flex items-center justify-center p-8" style={{ background: 'var(--color-canvas)' }}>
+                <Card className="w-full max-w-md border-0" style={{ background: 'var(--color-surface-card)', boxShadow: '0 8px 30px rgba(0,0,0,0.04)', borderRadius: 'var(--rounded-2xl)' }}>
+                    <CardHeader className="space-y-1 pb-4">
+                        <div className="flex justify-center mb-6 lg:hidden">
+                            <div className="p-3 rounded-2xl" style={{ background: 'var(--color-surface-dark)' }}>
+                                <Brain className="w-8 h-8" style={{ color: 'var(--color-on-dark)' }} />
                             </div>
                         </div>
-                        <CardTitle className="text-2xl font-bold">
+                        <CardTitle className="typo-display-sm text-center" style={{ color: 'var(--color-ink)' }}>
                             {isLogin ? "Welcome back" : "Create your account"}
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="typo-body-sm text-center" style={{ color: 'var(--color-body-soft)', marginTop: '8px' }}>
                             {isLogin
                                 ? "Enter your credentials to access your medical brain"
                                 : "Start your journey to smarter medical documentation"}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-5">
                             {!isLogin && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">First Name</label>
+                                        <label className="typo-title-sm" style={{ color: 'var(--color-ink)' }}>First Name</label>
                                         <div className="relative">
-                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-body-soft)' }} />
                                             <Input
                                                 placeholder="John"
                                                 className="pl-10"
@@ -154,9 +154,9 @@ export default function LoginPage() {
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Last Name</label>
+                                        <label className="typo-title-sm" style={{ color: 'var(--color-ink)' }}>Last Name</label>
                                         <div className="relative">
-                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-body-soft)' }} />
                                             <Input
                                                 placeholder="Doe"
                                                 className="pl-10"
@@ -170,9 +170,9 @@ export default function LoginPage() {
                             )}
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Email</label>
+                                <label className="typo-title-sm" style={{ color: 'var(--color-ink)' }}>Email</label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-body-soft)' }} />
                                     <Input
                                         type="email"
                                         placeholder="doctor@hospital.com"
@@ -185,9 +185,9 @@ export default function LoginPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Password</label>
+                                <label className="typo-title-sm" style={{ color: 'var(--color-ink)' }}>Password</label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--color-body-soft)' }} />
                                     <Input
                                         type={showPassword ? "text" : "password"}
                                         placeholder="••••••••"
@@ -200,7 +200,8 @@ export default function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-100 transition-opacity"
+                                        style={{ color: 'var(--color-body-soft)', opacity: 0.7 }}
                                     >
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
@@ -215,12 +216,13 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                variant="gradient"
+                                variant="primary"
                                 className="w-full mt-6"
                                 disabled={isLoading}
+                                style={{ borderRadius: 'var(--rounded-lg)' }}
                             >
                                 {isLoading ? (
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <div className="w-5 h-5 border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)] rounded-full animate-spin" />
                                 ) : (
                                     <>
                                         {isLogin ? "Sign In" : "Create Account"}
@@ -230,12 +232,14 @@ export default function LoginPage() {
                             </Button>
                         </form>
 
-                        <div className="mt-6 text-center">
-                            <p className="text-sm text-muted-foreground">
+                        <div className="mt-8 text-center">
+                            <p className="typo-body-sm" style={{ color: 'var(--color-body-soft)' }}>
                                 {isLogin ? "Don't have an account?" : "Already have an account?"}
                                 <button
+                                    type="button"
                                     onClick={() => setIsLogin(!isLogin)}
-                                    className="ml-1 text-primary font-medium hover:underline"
+                                    className="ml-2 font-semibold hover:underline transition-all"
+                                    style={{ color: 'var(--color-ink)' }}
                                 >
                                     {isLogin ? "Sign up" : "Sign in"}
                                 </button>
