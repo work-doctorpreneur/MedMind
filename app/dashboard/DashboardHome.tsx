@@ -14,12 +14,16 @@ import {
     X,
     Loader2,
     Trash2,
-    AlertTriangle
+    AlertTriangle,
+    Crown,
+    Calendar,
+    Sparkles
 } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { PricingSection } from "@/components/PricingSection"
 
 interface Notebook {
     id: string
@@ -33,16 +37,17 @@ interface Notebook {
 export default function DashboardHome() {
     const [darkMode, setDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('madmind-dark-mode') === 'true'
+            return localStorage.getItem('medmind-dark-mode') === 'true'
         }
         return false
     })
     const [searchQuery, setSearchQuery] = useState("")
-    const [user, setUser] = useState<{ id: string, firstName: string, lastName: string } | null>(null)
+    const [user, setUser] = useState<{ id: string, firstName: string, lastName: string, plan: string, planExpiresAt?: string } | null>(null)
     const [userRole, setUserRole] = useState<'admin' | 'doctor'>('doctor')
     const [notebooks, setNotebooks] = useState<Notebook[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [showCreateModal, setShowCreateModal] = useState(false)
+    const [showPricingModal, setShowPricingModal] = useState(false)
     const [newNotebookName, setNewNotebookName] = useState("")
     const [isCreating, setIsCreating] = useState(false)
     const [deletingNotebook, setDeletingNotebook] = useState<Notebook | null>(null)
@@ -51,7 +56,7 @@ export default function DashboardHome() {
     const supabase = createClient()
 
     useEffect(() => {
-        const savedDarkMode = localStorage.getItem('madmind-dark-mode')
+        const savedDarkMode = localStorage.getItem('medmind-dark-mode')
         if (savedDarkMode === 'true') {
             setDarkMode(true)
             document.documentElement.classList.add('dark')
@@ -65,17 +70,37 @@ export default function DashboardHome() {
         const initDashboard = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
-                // Fetch user profile including role
+                // Fetch user profile including role and plan
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('first_name, last_name, role')
+                    .select('first_name, last_name, role, plan, plan_expires_at')
                     .eq('id', user.id)
                     .single()
+
+                let currentPlan = profile?.plan || 'free'
+                let currentExpiresAt = profile?.plan_expires_at
+
+                // Check for plan expiration
+                if (currentPlan !== 'free' && currentExpiresAt) {
+                    const expiresAt = new Date(currentExpiresAt)
+                    if (expiresAt < new Date()) {
+                        // Plan expired - downgrade to free in DB
+                        await supabase
+                            .from('profiles')
+                            .update({ plan: 'free', plan_expires_at: null })
+                            .eq('id', user.id)
+                        
+                        currentPlan = 'free'
+                        currentExpiresAt = null
+                    }
+                }
 
                 setUser({
                     id: user.id,
                     firstName: profile?.first_name || user.user_metadata.first_name || "Doctor",
-                    lastName: profile?.last_name || user.user_metadata.last_name || ""
+                    lastName: profile?.last_name || user.user_metadata.last_name || "",
+                    plan: currentPlan,
+                    planExpiresAt: currentExpiresAt
                 })
                 setUserRole(profile?.role || 'doctor')
 
@@ -188,7 +213,7 @@ export default function DashboardHome() {
     const toggleDarkMode = () => {
         const newDarkMode = !darkMode
         setDarkMode(newDarkMode)
-        localStorage.setItem('madmind-dark-mode', String(newDarkMode))
+        localStorage.setItem('medmind-dark-mode', String(newDarkMode))
         if (newDarkMode) {
             document.documentElement.classList.add('dark')
         } else {
@@ -227,6 +252,35 @@ export default function DashboardHome() {
                         <span className="typo-body-sm" style={{ color: 'var(--color-body)' }}>
                             Welcome, {user ? `${user.firstName} ${user.lastName}` : "Doctor"}!
                         </span>
+                        {userRole === 'admin' && (
+                            <Link href="/admin" style={{ textDecoration: 'none' }}>
+                                <Button variant="outline" size="sm" style={{ height: '32px' }}>
+                                    Admin Dashboard
+                                </Button>
+                            </Link>
+                        )}
+                        {/* Plan Badge */}
+                        {user && (
+                            <div 
+                                onClick={() => setShowPricingModal(true)}
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '4px',
+                                    padding: '4px 8px',
+                                    borderRadius: '12px',
+                                    background: user.plan === 'yearly' ? 'rgba(59,130,246,0.1)' : (user.plan === 'trial' ? 'rgba(168,85,247,0.1)' : 'rgba(156,163,175,0.1)'),
+                                    color: user.plan === 'yearly' ? '#3b82f6' : (user.plan === 'trial' ? '#a855f7' : '#9ca3af'),
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    fontWeight: '600',
+                                    border: `1px solid ${user.plan === 'yearly' ? 'rgba(59,130,246,0.2)' : (user.plan === 'trial' ? 'rgba(168,85,247,0.2)' : 'rgba(156,163,175,0.2)')}`
+                                }}
+                            >
+                                <Crown size={12} />
+                                <span style={{ textTransform: 'capitalize' }}>{user.plan} Plan</span>
+                            </div>
+                        )}
                         <button
                             onClick={toggleDarkMode}
                             style={{
@@ -267,6 +321,46 @@ export default function DashboardHome() {
                 margin: '0 auto',
                 padding: `var(--spacing-xxl) var(--spacing-lg) var(--spacing-section)`,
             }}>
+                {/* Page Header */}
+                {/* Upgrade Banner for Free/Trial Users */}
+                {user && user.plan !== 'yearly' && (
+                    <div style={{
+                        background: 'linear-gradient(90deg, #3b82f6 0%, #a855f7 100%)',
+                        borderRadius: 'var(--rounded-xl)',
+                        padding: 'var(--spacing-lg)',
+                        marginBottom: 'var(--spacing-xl)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        color: 'white',
+                        boxShadow: '0 4px 15px rgba(59, 130, 246, 0.2)',
+                        width: '100%'
+                    }}>
+                        <div>
+                            <h3 className="typo-title-md" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Sparkles size={20} />
+                                {user.plan === 'free' ? 'Unlock MedMind Pro' : 'Your Trial ends soon'}
+                            </h3>
+                            <p className="typo-body-sm" style={{ opacity: 0.9, marginTop: '4px' }}>
+                                {user.plan === 'free' 
+                                    ? 'Get unlimited AI Chat, Mind Maps, and Audio Overviews for your medical studies.' 
+                                    : `Upgrade now to keep your access to all premium features.`}
+                            </p>
+                        </div>
+                        <Button 
+                            onClick={() => setShowPricingModal(true)}
+                            style={{ 
+                                background: 'white', 
+                                color: '#3b82f6', 
+                                border: 'none',
+                                fontWeight: '600'
+                            }}
+                        >
+                            Upgrade Now
+                        </Button>
+                    </div>
+                )}
+
                 {/* Page Header */}
                 <div style={{
                     display: 'flex',
@@ -656,6 +750,57 @@ export default function DashboardHome() {
                                 )}
                             </Button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Pricing Modal ── */}
+            {showPricingModal && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.8)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 100,
+                    padding: 'var(--spacing-base)',
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '1100px',
+                        background: '#0a0a0a',
+                        borderRadius: 'var(--rounded-xxl)',
+                        position: 'relative',
+                        maxHeight: '90vh',
+                        overflowY: 'auto'
+                    }}>
+                        <button
+                            onClick={() => setShowPricingModal(false)}
+                            style={{
+                                position: 'absolute',
+                                top: '20px',
+                                right: '20px',
+                                background: 'rgba(255,255,255,0.1)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: 'white',
+                                padding: '8px',
+                                borderRadius: '50%',
+                                zIndex: 10
+                            }}
+                        >
+                            <X size={24} />
+                        </button>
+                        <PricingSection 
+                            currentPlan={user?.plan} 
+                            userId={user?.id}
+                            onPlanUpdated={() => {
+                                // Refresh user data
+                                window.location.reload()
+                            }}
+                        />
                     </div>
                 </div>
             )}

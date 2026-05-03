@@ -43,10 +43,12 @@ import {
     Zap,
     Flame,
     MessageSquareQuote,
-    Lightbulb
+    Lightbulb,
+    Crown
 } from "lucide-react"
 import Link from "next/link"
 import NextImage from "next/image"
+import { PricingSection } from "@/components/PricingSection"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import ReactFlow, {
@@ -171,6 +173,9 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
     const [notebookName, setNotebookName] = useState("Loading...")
     const [userId, setUserId] = useState<string | null>(null)
     const [userRole, setUserRole] = useState<'admin' | 'doctor'>('doctor')
+    const [userPlan, setUserPlan] = useState<string>('free')
+    const [trialAudioUsed, setTrialAudioUsed] = useState<boolean>(false)
+    const [showPricingModal, setShowPricingModal] = useState(false)
     const [expandedCitations, setExpandedCitations] = useState<Set<number>>(new Set())
     const [processingDocs, setProcessingDocs] = useState<Set<string>>(new Set())
     const [notebookSummary, setNotebookSummary] = useState<NotebookSummary | null>(null)
@@ -242,14 +247,31 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             }
             setUserId(user.id)
 
-            // Fetch user profile for role
+            // Fetch user profile for role and plan
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('role')
+                .select('role, plan, trial_audio_used, plan_expires_at')
                 .eq('id', user.id)
                 .single()
 
+            let currentPlan = profile?.plan || 'free'
+            
+            // Check for plan expiration
+            if (currentPlan !== 'free' && profile?.plan_expires_at) {
+                const expiresAt = new Date(profile.plan_expires_at)
+                if (expiresAt < new Date()) {
+                    // Plan expired - downgrade to free in DB
+                    await supabase
+                        .from('profiles')
+                        .update({ plan: 'free', plan_expires_at: null })
+                        .eq('id', user.id)
+                    currentPlan = 'free'
+                }
+            }
+
             setUserRole(profile?.role || 'doctor')
+            setUserPlan(currentPlan)
+            setTrialAudioUsed(profile?.trial_audio_used || false)
 
             // Fetch notebook details (no user_id filter - all users can view)
             const { data: notebook } = await supabase
@@ -514,6 +536,12 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
     const handleSendMessage = async () => {
         if (!message.trim() || !userId || isSending) return
+
+        // Gating for AI Chat (Only for Yearly Pro)
+        if (userPlan !== 'yearly') {
+            setShowPricingModal(true)
+            return
+        }
 
         const userMessage = message.trim()
         setMessage("")
@@ -888,6 +916,29 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
     }
 
     const handleStudioAction = (actionId: string) => {
+        // Gating Logic
+        // Trial members can only use Audio Overview once
+        // Yearly members can use everything
+        // Free members see popup for everything
+        if (userPlan === 'yearly') {
+            // Proceed normally
+        } else if (userPlan === 'trial') {
+            if (actionId === 'audio') {
+                if (trialAudioUsed) {
+                    setShowPricingModal(true)
+                    return
+                }
+            } else {
+                // Other tools are gated
+                setShowPricingModal(true)
+                return
+            }
+        } else {
+            // Free plan - all studio tools gated
+            setShowPricingModal(true)
+            return
+        }
+
         if (actionId === 'flashcards') {
             generateFlashcards()
             return
@@ -928,6 +979,12 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
     // Audio Generation - handles both types
     const generateAudio = async (type: string) => {
+        // Gating for Audio Overview (Trial users get 1 use)
+        if (userPlan === 'trial' && type === 'overview' && trialAudioUsed) {
+            setShowPricingModal(true)
+            return
+        }
+
         setShowAudioTypeSelector(false)
         setAudioType(type)
 
@@ -957,6 +1014,15 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                 const url = URL.createObjectURL(blob)
                 setAudioUrl(url)
                 setAudioTitle(result.title || (type === 'pixar_story' ? 'Pixar Story' : 'Audio Overview'))
+
+                // If trial user generated an overview, mark it as used
+                if (userPlan === 'trial' && type === 'overview') {
+                    await supabase
+                        .from('profiles')
+                        .update({ trial_audio_used: true })
+                        .eq('id', userId)
+                    setTrialAudioUsed(true)
+                }
             } else {
                 console.error('Audio generation error:', result.error)
                 setAudioUrl('')
@@ -1263,57 +1329,78 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
                 {/* Center Column - Chat */}
                 <div className="flex-1 flex flex-col min-w-0">
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                        {/* Notebook Summary Header - Like NotebookLM */}
-                        {notebookSummary && (
-                            <div className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl p-6 mb-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="p-3 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-xl">
-                                        <BookOpen className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h2 className="text-xl font-bold text-foreground mb-2">{notebookSummary.title}</h2>
-                                        <p className="text-sm text-muted-foreground mb-3">{notebookSummary.sourceCount} source{notebookSummary.sourceCount !== 1 ? 's' : ''}</p>
-
-                                        {/* Display all document summaries */}
-                                        <div className="space-y-3 mb-4">
-                                            {notebookSummary.summaries.map((s, i) => (
-                                                <div key={i} className="text-sm">
-                                                    <span className="font-semibold text-primary">{s.docName.replace('.pdf', '')}:</span>
-                                                    <span className="text-foreground ml-1">{s.summary}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {notebookSummary.tags.length > 0 && (
-                                            <div className="flex flex-wrap gap-2">
-                                                {notebookSummary.tags.map((tag, i) => (
-                                                    <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                                                        <Tag className="w-3 h-3" />
-                                                        {tag}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                    {/* Chat Header */}
+                    <div style={{
+                        padding: 'var(--spacing-md) var(--spacing-lg)',
+                        borderBottom: '1px solid var(--color-hairline)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                            <div style={{
+                                width: '32px',
+                                height: '32px',
+                                background: 'rgba(59,130,246,0.1)',
+                                borderRadius: 'var(--rounded-md)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Brain size={18} style={{ color: '#3b82f6' }} />
                             </div>
-                        )}
+                            <div>
+                                <h2 className="typo-title-sm" style={{ color: 'var(--color-ink)', margin: 0 }}>Chat with AI</h2>
+                                <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: 0 }}>
+                                    {userPlan === 'yearly' ? 'Powered by MedMind AI' : 'Upgrade to use AI Chat'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                        {/* Welcome message if no messages and no summary */}
-                        {messages.length === 0 && !notebookSummary && (
-                            <div className="flex justify-start">
-                                <div className="bg-card border rounded-2xl rounded-bl-md px-5 py-4 max-w-[80%]">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="p-1 rounded-lg" style={{ background: 'var(--color-surface-dark)' }}>
-                                                <NextImage src="/logo.png" alt="MedMind" width={16} height={16} />
-                                            </div>
-                                            <span className="text-xs font-medium text-muted-foreground">MedMind AI</span>
-                                    </div>
-                                    <div className="text-sm leading-relaxed">
-                                        Hello! Upload some documents and I'll help you analyze them. Ask me anything about the content.
-                                    </div>
+                    {/* Messages Area */}
+                    <div style={{
+                        flex: 1,
+                        overflowY: 'auto',
+                        padding: 'var(--spacing-lg)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 'var(--spacing-lg)',
+                        position: 'relative'
+                    }}>
+                        {userPlan !== 'yearly' && messages.length === 0 && (
+                            <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 'var(--spacing-xl)',
+                                textAlign: 'center',
+                                zIndex: 10,
+                                background: 'rgba(var(--color-canvas-rgb), 0.5)',
+                                backdropFilter: 'blur(4px)'
+                            }}>
+                                <div style={{
+                                    width: '64px',
+                                    height: '64px',
+                                    background: 'rgba(59,130,246,0.1)',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '16px'
+                                }}>
+                                    <Crown size={32} style={{ color: '#3b82f6' }} />
                                 </div>
+                                <h3 className="typo-title-md" style={{ color: 'var(--color-ink)', marginBottom: '8px' }}>AI Chat is a Pro Feature</h3>
+                                <p className="typo-body-sm" style={{ color: 'var(--color-muted)', marginBottom: '20px', maxWidth: '280px' }}>
+                                    Get instant medical insights and study help by upgrading to MedMind Pro.
+                                </p>
+                                <Button onClick={() => setShowPricingModal(true)} size="sm">
+                                    View Pro Plans
+                                </Button>
                             </div>
                         )}
 
@@ -1332,7 +1419,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                             <span className="text-xs font-medium text-muted-foreground">MedMind AI</span>
                                         </div>
                                     )}
-                                    <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                                    <div className="text-sm leading-relaxed markdown-content">
                                         {msg.role === 'assistant' ? renderMarkdown(msg.content) : msg.content}
                                     </div>
 
@@ -1386,7 +1473,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                                    disabled={isSending}
+                                    disabled={isSending || userPlan !== 'yearly'}
                                 />
                                 <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2">
                                     <Mic className="w-4 h-4" />
@@ -1397,7 +1484,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                 size="icon"
                                 className="h-12 w-12 rounded-xl"
                                 onClick={handleSendMessage}
-                                disabled={isSending || !message.trim()}
+                                disabled={isSending || !message.trim() || userPlan !== 'yearly'}
                             >
                                 {isSending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                             </Button>
@@ -1427,28 +1514,23 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                 <button
                                     key={action.id}
                                     onClick={() => handleStudioAction(action.id)}
-                                    disabled={isGenerating || documents.length === 0}
+                                    disabled={documents.length === 0 || (action.id === 'audio' && userPlan === 'trial' && trialAudioUsed)}
                                     style={{
-                                        padding: 'var(--spacing-base)',
-                                        borderRadius: 'var(--rounded-lg)',
-                                        border: '1px solid var(--color-hairline-strong)',
-                                        background: 'var(--color-surface-card)',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        transition: 'all 0.15s',
-                                        opacity: (isGenerating || documents.length === 0) ? 0.5 : 1,
-                                    }}
-                                    onMouseEnter={e => {
-                                        if (!isGenerating && documents.length > 0) {
-                                            e.currentTarget.style.background = 'var(--color-surface-strong)'
-                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'
-                                        }
-                                    }}
-                                    onMouseLeave={e => {
-                                        e.currentTarget.style.background = 'var(--color-surface-card)'
-                                        e.currentTarget.style.boxShadow = 'none'
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'var(--spacing-sm)',
+                                        background: 'var(--color-canvas)', border: '1px solid var(--color-hairline)',
+                                        borderRadius: 'var(--rounded-lg)', cursor: 'pointer', transition: 'all 0.2s',
+                                        opacity: documents.length === 0 ? 0.5 : 1,
+                                        position: 'relative'
                                     }}
                                 >
+                                    {/* Gated indicators */}
+                                    {action.id === 'audio' && userPlan === 'trial' && trialAudioUsed && (
+                                        <div style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--color-status-error)', color: 'white', fontSize: '10px', padding: '2px 4px', borderRadius: '4px', fontWeight: 'bold' }}>USED</div>
+                                    )}
+                                    {userPlan !== 'yearly' && !(action.id === 'audio' && userPlan === 'trial' && !trialAudioUsed) && (
+                                        <Zap size={10} style={{ position: 'absolute', top: '4px', right: '4px', color: 'var(--color-text-link)' }} />
+                                    )}
+
                                     <div style={{
                                         width: '32px', height: '32px',
                                         background: 'var(--color-surface-strong)',
@@ -1463,7 +1545,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                         )}
                                     </div>
                                     <h3 className="typo-body-sm" style={{ color: 'var(--color-ink)', fontWeight: 600, margin: 0 }}>{action.label}</h3>
-                                    <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '2px 0 0' }}>{action.description}</p>
+                                    <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '2px 0 0', textAlign: 'center' }}>{action.description}</p>
                                 </button>
                             ))}
                         </div>
@@ -1486,36 +1568,39 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             {/* Flashcard Modal */}
             {
                 showFlashcardModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                        <div className="bg-card border rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl">
-                            {/* Modal Header */}
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <div>
-                                    <h2 className="font-semibold text-lg">{notebookName} Flashcards</h2>
-                                    <p className="text-xs text-muted-foreground">Based on {documents.length} source{documents.length !== 1 ? 's' : ''}</p>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', maxWidth: '500px', width: '100%', margin: '0 var(--spacing-base)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            {/* Black header bar */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <BookOpen size={20} style={{ color: 'var(--color-on-dark)' }} />
+                                    <div>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>{notebookName} Flashcards</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Based on {documents.length} source{documents.length !== 1 ? 's' : ''}</p>
+                                    </div>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={closeFlashcardModal} className="rounded-full">
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={closeFlashcardModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Flashcard Content */}
-                            <div className="p-6">
+                            <div style={{ padding: 'var(--spacing-lg)' }}>
                                 {isLoadingFlashcards ? (
-                                    <div className="flex flex-col items-center justify-center py-16">
-                                        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-                                        <p className="text-muted-foreground">Generating flashcards...</p>
+                                    <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
+                                        <Loader2 size={40} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite', margin: '0 auto var(--spacing-base)' }} />
+                                        <p className="typo-body-sm" style={{ color: 'var(--color-body)', fontWeight: 500 }}>Generating flashcards...</p>
                                     </div>
                                 ) : flashcards.length > 0 ? (
                                     <>
                                         {/* Keyboard hint */}
-                                        <p className="text-xs text-muted-foreground text-center mb-4">
+                                        <p className="typo-caption" style={{ color: 'var(--color-muted)', textAlign: 'center', marginBottom: 'var(--spacing-base)' }}>
                                             Press "Space" to flip, "←" / "→" to navigate
                                         </p>
 
                                         {/* Flashcard */}
                                         <div
-                                            className="relative min-h-[250px] cursor-pointer perspective-1000"
+                                            style={{ position: 'relative', minHeight: '250px', cursor: 'pointer', perspective: '1000px' }}
                                             onClick={() => setIsFlashcardFlipped(!isFlashcardFlipped)}
                                             onKeyDown={(e) => {
                                                 if (e.key === ' ' || e.key === 'Space') {
@@ -1529,70 +1614,68 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                             }}
                                             tabIndex={0}
                                         >
-                                            <div className={`w-full min-h-[250px] transition-all duration-500 transform-style-preserve-3d ${isFlashcardFlipped ? 'rotate-y-180' : ''}`}>
+                                            <div style={{ width: '100%', minHeight: '250px', transition: 'all 0.5s', transformStyle: 'preserve-3d', transform: isFlashcardFlipped ? 'rotateY(180deg)' : 'none' }}>
                                                 {/* Front (Question) */}
-                                                <div className={`absolute inset-0 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-card to-muted p-6 flex flex-col justify-center items-center backface-hidden ${isFlashcardFlipped ? 'invisible' : ''}`}>
-                                                    <p className="text-lg font-medium text-center leading-relaxed">
+                                                <div style={{ position: 'absolute', inset: 0, borderRadius: 'var(--rounded-xl)', border: '1px solid var(--color-hairline-strong)', background: 'var(--color-surface-card)', padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backfaceVisibility: 'hidden', visibility: isFlashcardFlipped ? 'hidden' : 'visible' }}>
+                                                    <p className="typo-body-lg" style={{ color: 'var(--color-ink)', textAlign: 'center', fontWeight: 500 }}>
                                                         {flashcards[currentFlashcardIndex]?.question}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground mt-4">Click to see answer</p>
+                                                    <p className="typo-caption" style={{ color: 'var(--color-muted)', marginTop: 'var(--spacing-base)' }}>Click to see answer</p>
                                                 </div>
 
                                                 {/* Back (Answer) */}
-                                                <div className={`absolute inset-0 rounded-xl border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-green-500/10 p-6 flex flex-col justify-center items-center backface-hidden rotate-y-180 ${!isFlashcardFlipped ? 'invisible' : ''}`}>
-                                                    <p className="text-lg text-center leading-relaxed">
+                                                <div style={{ position: 'absolute', inset: 0, borderRadius: 'var(--rounded-xl)', border: '1px solid var(--color-hairline-strong)', background: 'var(--color-surface-strong)', padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', visibility: !isFlashcardFlipped ? 'hidden' : 'visible' }}>
+                                                    <p className="typo-body-lg" style={{ color: 'var(--color-ink)', textAlign: 'center' }}>
                                                         {flashcards[currentFlashcardIndex]?.answer}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground mt-4">Click to see question</p>
+                                                    <p className="typo-caption" style={{ color: 'var(--color-muted)', marginTop: 'var(--spacing-base)' }}>Click to see question</p>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Navigation */}
-                                        <div className="flex items-center justify-center gap-6 mt-6">
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-lg)', marginTop: 'var(--spacing-lg)' }}>
                                             <Button
                                                 variant="outline"
-                                                size="icon"
                                                 onClick={prevFlashcard}
                                                 disabled={currentFlashcardIndex === 0}
-                                                className="rounded-full"
+                                                style={{ borderRadius: 'var(--rounded-full)', padding: '8px', height: 'auto' }}
                                             >
-                                                <ArrowLeft className="w-5 h-5" />
+                                                <ArrowLeft size={16} />
                                             </Button>
 
-                                            <span className="text-sm text-muted-foreground">
+                                            <span className="typo-body-sm" style={{ color: 'var(--color-muted)', fontWeight: 500 }}>
                                                 {currentFlashcardIndex + 1} / {flashcards.length}
                                             </span>
 
                                             <Button
                                                 variant="outline"
-                                                size="icon"
                                                 onClick={nextFlashcard}
                                                 disabled={currentFlashcardIndex === flashcards.length - 1}
-                                                className="rounded-full"
+                                                style={{ borderRadius: 'var(--rounded-full)', padding: '8px', height: 'auto' }}
                                             >
-                                                <ArrowRight className="w-5 h-5" />
+                                                <ArrowRight size={16} />
                                             </Button>
                                         </div>
                                     </>
                                 ) : (
-                                    <div className="text-center py-16 text-muted-foreground">
+                                    <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0', color: 'var(--color-muted)' }}>
                                         No flashcards available
                                     </div>
                                 )}
                             </div>
 
                             {/* Modal Footer */}
-                            <div className="flex items-center justify-center gap-4 p-4 border-t">
-                                <Button variant="outline" className="gap-2" onClick={closeFlashcardModal}>
-                                    <ThumbsUp className="w-4 h-4" />
-                                    Good content
-                                </Button>
-                                <Button variant="outline" className="gap-2" onClick={closeFlashcardModal}>
-                                    <ThumbsDown className="w-4 h-4" />
-                                    Bad content
-                                </Button>
-                            </div>
+                            {!isLoadingFlashcards && flashcards.length > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-base)', padding: 'var(--spacing-base)', borderTop: '1px solid var(--color-hairline)', background: 'var(--color-surface-card)' }}>
+                                    <Button variant="outline" onClick={closeFlashcardModal} style={{ gap: 'var(--spacing-xs)' }}>
+                                        <ThumbsUp size={14} /> Good content
+                                    </Button>
+                                    <Button variant="outline" onClick={closeFlashcardModal} style={{ gap: 'var(--spacing-xs)' }}>
+                                        <ThumbsDown size={14} /> Bad content
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )
@@ -1601,61 +1684,93 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             {/* Quiz Modal */}
             {
                 showQuizModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                        <div className="bg-card border rounded-2xl w-full max-w-lg mx-4 overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-                            {/* Modal Header */}
-                            <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
-                                <div>
-                                    <h2 className="font-semibold text-lg">{notebookName} Quiz</h2>
-                                    <p className="text-xs text-muted-foreground">Question {currentQuizIndex + 1} of {quizQuestions.length}</p>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', maxWidth: '600px', width: '100%', margin: '0 var(--spacing-base)', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                            {/* Black header bar */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <HelpCircle size={20} style={{ color: 'var(--color-on-dark)' }} />
+                                    <div>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>{notebookName} Quiz</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Question {currentQuizIndex + 1} of {quizQuestions.length}</p>
+                                    </div>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={closeQuizModal} className="rounded-full">
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={closeQuizModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Quiz Content - Scrollable */}
-                            <div className="p-6 overflow-y-auto flex-1">
+                            <div style={{ padding: 'var(--spacing-lg)', overflowY: 'auto', flex: 1 }}>
                                 {isLoadingQuiz ? (
-                                    <div className="flex flex-col items-center justify-center py-16">
-                                        <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-                                        <p className="text-muted-foreground">Generating questions...</p>
+                                    <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
+                                        <Loader2 size={40} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite', margin: '0 auto var(--spacing-base)' }} />
+                                        <p className="typo-body-sm" style={{ color: 'var(--color-body)', fontWeight: 500 }}>Generating questions...</p>
                                     </div>
                                 ) : quizQuestions.length > 0 ? (
                                     <>
-                                        <div className="mb-6">
-                                            <h3 className="text-lg font-medium leading-relaxed mb-6">
+                                        <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                                            <h3 className="typo-title-sm" style={{ color: 'var(--color-ink)', marginBottom: 'var(--spacing-lg)' }}>
                                                 {quizQuestions[currentQuizIndex]?.question}
                                             </h3>
 
-                                            <div className="space-y-3">
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
                                                 {quizQuestions[currentQuizIndex]?.options?.map((option: string, idx: number) => {
                                                     const isSelected = selectedQuizAnswer === option
                                                     const isCorrect = option === quizQuestions[currentQuizIndex].answer
 
-                                                    let variantClass = "hover:bg-accent hover:text-accent-foreground border-input"
+                                                    let baseStyle: React.CSSProperties = {
+                                                        width: '100%',
+                                                        padding: 'var(--spacing-base)',
+                                                        borderRadius: 'var(--rounded-lg)',
+                                                        border: '1px solid var(--color-hairline-strong)',
+                                                        background: 'var(--color-surface-card)',
+                                                        textAlign: 'left',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        color: 'var(--color-ink)'
+                                                    }
 
                                                     if (isQuizAnswered) {
                                                         if (isCorrect) {
-                                                            variantClass = "bg-green-100 border-green-500 text-green-900 dark:bg-green-900/30 dark:text-green-100"
+                                                            baseStyle.background = 'var(--color-success)'
+                                                            baseStyle.borderColor = 'var(--color-success)'
+                                                            baseStyle.color = '#fff'
                                                         } else if (isSelected && !isCorrect) {
-                                                            variantClass = "bg-red-100 border-red-500 text-red-900 dark:bg-red-900/30 dark:text-red-100"
+                                                            baseStyle.background = 'var(--color-error)'
+                                                            baseStyle.borderColor = 'var(--color-error)'
+                                                            baseStyle.color = '#fff'
                                                         } else {
-                                                            variantClass = "opacity-50"
+                                                            baseStyle.opacity = 0.5
                                                         }
+                                                        baseStyle.cursor = 'default'
                                                     }
 
                                                     return (
-                                                        <div
+                                                        <button
                                                             key={idx}
-                                                            onClick={() => handleQuizOptionSelect(option)}
-                                                            className={`w-full p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer ${variantClass}`}
+                                                            onClick={() => !isQuizAnswered && handleQuizOptionSelect(option)}
+                                                            style={baseStyle}
+                                                            onMouseEnter={(e) => {
+                                                                if (!isQuizAnswered) {
+                                                                    e.currentTarget.style.borderColor = 'var(--color-ink)'
+                                                                    e.currentTarget.style.background = 'var(--color-surface-strong)'
+                                                                }
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                if (!isQuizAnswered) {
+                                                                    e.currentTarget.style.borderColor = 'var(--color-hairline-strong)'
+                                                                    e.currentTarget.style.background = 'var(--color-surface-card)'
+                                                                }
+                                                            }}
                                                         >
-                                                            <span className="font-medium mr-2">{String.fromCharCode(65 + idx)}.</span>
-                                                            {option}
-                                                            {isQuizAnswered && isCorrect && <CheckCircle2 className="w-4 h-4 ml-2 inline text-green-600" />}
-                                                            {isQuizAnswered && isSelected && !isCorrect && <XCircle className="w-4 h-4 ml-2 inline text-red-600" />}
-                                                        </div>
+                                                            <span style={{ fontWeight: 600, marginRight: 'var(--spacing-sm)' }}>{String.fromCharCode(65 + idx)}.</span>
+                                                            <span style={{ flex: 1 }}>{option}</span>
+                                                            {isQuizAnswered && isCorrect && <CheckCircle2 size={16} style={{ color: '#fff' }} />}
+                                                            {isQuizAnswered && isSelected && !isCorrect && <XCircle size={16} style={{ color: '#fff' }} />}
+                                                        </button>
                                                     )
                                                 })}
                                             </div>
@@ -1663,15 +1778,15 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
                                         {/* Explanation & Next */}
                                         {isQuizAnswered && (
-                                            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                                <div className="p-4 rounded-lg bg-muted/50 mb-6 text-sm">
-                                                    <span className="font-semibold block mb-1">Explanation:</span>
-                                                    {quizQuestions[currentQuizIndex]?.explanation}
+                                            <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                                                <div style={{ padding: 'var(--spacing-base)', borderRadius: 'var(--rounded-lg)', background: 'var(--color-surface-strong)', marginBottom: 'var(--spacing-lg)' }}>
+                                                    <span className="typo-body-sm" style={{ fontWeight: 600, color: 'var(--color-ink)', display: 'block', marginBottom: '4px' }}>Explanation:</span>
+                                                    <span className="typo-caption" style={{ color: 'var(--color-body)' }}>{quizQuestions[currentQuizIndex]?.explanation}</span>
                                                 </div>
 
-                                                <Button className="w-full" onClick={nextQuizQuestion}>
+                                                <Button style={{ width: '100%' }} onClick={nextQuizQuestion}>
                                                     {currentQuizIndex < quizQuestions.length - 1 ? (
-                                                        <>Next Question <ArrowRight className="w-4 h-4 ml-2" /></>
+                                                        <>Next Question <ArrowRight size={16} style={{ marginLeft: 'var(--spacing-xs)' }} /></>
                                                     ) : (
                                                         <>Finish Quiz</>
                                                     )}
@@ -1680,7 +1795,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                         )}
                                     </>
                                 ) : (
-                                    <div className="text-center py-16 text-muted-foreground">
+                                    <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0', color: 'var(--color-muted)' }}>
                                         No questions available
                                     </div>
                                 )}
@@ -1693,36 +1808,29 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             {/* Mind Map Modal */}
             {
                 showMindMapModal && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-card border rounded-2xl w-full max-w-5xl h-[80vh] flex flex-col overflow-hidden">
-                            {/* Header */}
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-lg">
-                                        <Map className="w-5 h-5 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', width: '100%', maxWidth: '1000px', height: '80vh', margin: '0 var(--spacing-base)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            {/* Black header */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <Map size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-xl font-bold">Mind Map</h2>
-                                        <p className="text-sm text-muted-foreground">Visual knowledge graph of your documents</p>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>Mind Map</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Visual knowledge graph of your documents</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="rounded-full"
-                                    onClick={() => setShowMindMapModal(false)}
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => setShowMindMapModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Mind Map Content */}
-                            <div className="flex-1 relative">
+                            <div style={{ flex: 1, position: 'relative' }}>
                                 {isLoadingMindMap ? (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="text-center">
-                                            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-                                            <p className="text-muted-foreground">Generating mind map...</p>
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <Loader2 size={40} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite', margin: '0 auto var(--spacing-base)' }} />
+                                            <p className="typo-body-sm" style={{ color: 'var(--color-body)' }}>Generating mind map...</p>
                                         </div>
                                     </div>
                                 ) : mindMapNodes.length > 0 ? (
@@ -1732,39 +1840,39 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                         onNodeClick={onNodeClick}
                                         fitView
                                         attributionPosition="bottom-left"
-                                        style={{ background: darkMode ? '#1e293b' : '#ffffff' }}
+                                        style={{ background: 'var(--color-canvas)' }}
                                     >
-                                        <Background color="#cbd5e1" gap={20} />
+                                        <Background color="var(--color-hairline-strong)" gap={20} />
                                         <Controls />
                                         <MiniMap
                                             nodeColor={(node) => {
                                                 if (node.id === 'central') return '#000000';
-                                                if (node.id.startsWith('cat-')) return '#334155';
-                                                return '#94a3b8';
+                                                if (node.id.startsWith('cat-')) return '#555555';
+                                                return '#aaaaaa';
                                             }}
-                                            maskColor="rgba(0, 0, 0, 0.1)"
+                                            maskColor="rgba(0, 0, 0, 0.05)"
                                         />
                                     </ReactFlow>
                                 ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-muted)' }}>
                                         No mind map data available
                                     </div>
                                 )}
                             </div>
 
                             {/* Legend */}
-                            <div className="p-4 border-t flex items-center justify-center gap-6 text-sm bg-white border-slate-200">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded bg-white border-2 border-black"></div>
-                                    <span className="text-slate-900 font-medium">Main Theme</span>
+                            <div style={{ padding: 'var(--spacing-base)', borderTop: '1px solid var(--color-hairline)', background: 'var(--color-surface-card)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-xl)', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--color-canvas)', border: '2px solid var(--color-ink)' }}></div>
+                                    <span className="typo-caption" style={{ color: 'var(--color-ink)', fontWeight: 500 }}>Main Theme</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded bg-white border border-black"></div>
-                                    <span className="text-slate-700">Key Topics</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--color-canvas)', border: '1px solid var(--color-ink)' }}></div>
+                                    <span className="typo-caption" style={{ color: 'var(--color-body)' }}>Key Topics</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded bg-white border border-black"></div>
-                                    <span className="text-slate-600">Concepts (Click to Expand)</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                                    <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: 'var(--color-canvas)', border: '1px solid var(--color-muted)' }}></div>
+                                    <span className="typo-caption" style={{ color: 'var(--color-muted)' }}>Concepts (Click to Expand)</span>
                                 </div>
                             </div>
                         </div>
@@ -1959,7 +2067,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="prose max-w-none" style={{ color: 'var(--color-body)' }}>
+                                    <div className="markdown-content">
                                         {renderMarkdown(reportContent)}
                                     </div>
                                 )}
@@ -2163,6 +2271,26 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                     </div>
                 )
             }
+            {/* Pricing Modal */}
+            {showPricingModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <button
+                            onClick={() => setShowPricingModal(false)}
+                            style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10, background: 'var(--color-surface-dark)', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                            <X size={20} />
+                        </button>
+                        <PricingSection
+                            onSuccess={() => {
+                                setShowPricingModal(false)
+                                // Refresh user plan
+                                router.refresh()
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div >
     )
 }
