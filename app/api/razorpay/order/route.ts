@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import { razorpay } from '@/lib/razorpay';
+import { getRazorpayClient } from '@/lib/razorpay';
 import { createClient } from '@/utils/supabase/server';
+
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +16,7 @@ export async function POST(req: Request) {
     // Yearly Plan - ₹999
     const amount = 999 * 100; // in paise
     const currency = 'INR';
+    const razorpay = getRazorpayClient();
 
     const order = await razorpay.orders.create({
       amount,
