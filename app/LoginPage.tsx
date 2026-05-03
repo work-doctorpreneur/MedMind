@@ -217,7 +217,7 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                variant="primary"
+                                variant="default"
                                 className="w-full mt-6"
                                 disabled={isLoading}
                                 style={{ borderRadius: 'var(--rounded-lg)' }}
