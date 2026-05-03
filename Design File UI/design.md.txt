@@ -287,3 +287,10 @@ When photography is used (rare — mostly testimonials), avatars crop to perfect
 - Form validation states beyond `{component.text-input-focused}` are not extracted — error / success states would need a sign-up or feedback flow to confirm.
 - The actual Claude product surface (claude.ai chat interface) shares some tokens with the marketing site but adds many product-specific components (chat bubbles, message tools, file upload chips, conversation history sidebar) that are out of scope for this marketing-surface document.
 - The "agent" / "computer use" demo cards on certain pages display animated Claude controlling a browser — the static screenshot doesn't fully capture the animation chrome.
+
+## Implementation Deviations (MedMind Project)
+
+During the implementation of this design system into the codebase, the following minor deviations and branding adjustments were made:
+1. **Brand Name Update:** The project brand has been officially set to **MedMind** (reverting prior experiments like "Mad Mind"). All UI elements, metadata, and conversational AI names (e.g., "MedMind AI") reflect this.
+2. **Logo Asset:** Instead of using the Anthropic radial-spike mark or a generic generic Sparkles SVG, the application uses a custom `logo.png` image asset (`<NextImage src="/logo.png" />`) for consistency.
+3. **Component Libraries:** For components based on Shadcn UI (like `<Button>`), the primary buttons utilize the `variant="default"` prop rather than `variant="primary"`. The underlying styles for the `default` variant have been customized to map directly to the `{colors.primary}` and `{colors.on-primary}` tokens to maintain the visual design requirements without causing TypeScript compilation errors.
