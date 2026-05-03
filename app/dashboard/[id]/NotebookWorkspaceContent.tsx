@@ -46,6 +46,7 @@ import {
     Lightbulb
 } from "lucide-react"
 import Link from "next/link"
+import NextImage from "next/image"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
 import * as pdfjsLib from 'pdfjs-dist'
@@ -1305,11 +1306,11 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                         {messages.length === 0 && !notebookSummary && (
                             <div className="flex justify-start">
                                 <div className="bg-card border rounded-2xl rounded-bl-md px-5 py-4 max-w-[80%]">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="p-1 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-lg">
-                                            <Sparkles className="w-3 h-3 text-white" />
-                                        </div>
-                                        <span className="text-xs font-medium text-muted-foreground">Mad Mind AI</span>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="p-1 rounded-lg" style={{ background: 'var(--color-surface-dark)' }}>
+                                                <NextImage src="/logo.png" alt="MedMind" width={16} height={16} />
+                                            </div>
+                                            <span className="text-xs font-medium text-muted-foreground">MedMind AI</span>
                                     </div>
                                     <div className="text-sm leading-relaxed">
                                         Hello! Upload some documents and I'll help you analyze them. Ask me anything about the content.
@@ -1327,10 +1328,10 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                     }`}>
                                     {msg.role === 'assistant' && (
                                         <div className="flex items-center gap-2 mb-2">
-                                            <div className="p-1 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-lg">
-                                                <Sparkles className="w-3 h-3 text-white" />
+                                            <div className="p-1 rounded-lg" style={{ background: 'var(--color-surface-dark)' }}>
+                                                <NextImage src="/logo.png" alt="MedMind" width={16} height={16} />
                                             </div>
-                                            <span className="text-xs font-medium text-muted-foreground">Mad Mind AI</span>
+                                            <span className="text-xs font-medium text-muted-foreground">MedMind AI</span>
                                         </div>
                                     )}
                                     <div className="text-sm leading-relaxed prose prose-sm max-w-none">

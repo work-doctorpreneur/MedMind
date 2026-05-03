@@ -15,7 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mad Mind — AI-Powered Notebook & Learning Platform",
+  title: "MedMind — AI-Powered Notebook & Learning Platform",
   description: "Your AI-powered notebook and learning platform. Upload documents, generate insights, and learn smarter.",
   icons: {
     icon: "/logo.png",

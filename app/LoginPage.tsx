@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Brain, Mail, Lock, User, Eye, EyeOff, ArrowRight, Sparkles, CheckCircle, X } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import { createClient } from "@/utils/supabase/client"
 
 export default function LoginPage() {
@@ -83,9 +84,9 @@ export default function LoginPage() {
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-8">
                         <div className="p-3 rounded-2xl" style={{ background: 'var(--color-surface-dark-elevated)' }}>
-                            <Brain className="w-8 h-8" style={{ color: 'var(--color-on-dark)' }} />
+                            <Image src="/logo.png" alt="MedMind Logo" width={32} height={32} />
                         </div>
-                        <span className="typo-display-md" style={{ color: 'var(--color-on-dark)' }}>Mad Mind</span>
+                        <span className="typo-display-md" style={{ color: 'var(--color-on-dark)' }}>MedMind</span>
                     </div>
                     <p className="typo-body-md max-w-md" style={{ color: 'var(--color-on-dark-soft)' }}>
                         Your AI-powered medical second brain. Upload documents, get insights, and never miss critical information again.
@@ -114,7 +115,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="typo-caption relative z-10" style={{ color: 'var(--color-on-dark-soft)' }}>
-                    © 2026 Mad Mind. Built for healthcare professionals.
+                    © 2026 MedMind. Built for healthcare professionals.
                 </p>
             </div>
 
@@ -124,7 +125,7 @@ export default function LoginPage() {
                     <CardHeader className="space-y-1 pb-4">
                         <div className="flex justify-center mb-6 lg:hidden">
                             <div className="p-3 rounded-2xl" style={{ background: 'var(--color-surface-dark)' }}>
-                                <Brain className="w-8 h-8" style={{ color: 'var(--color-on-dark)' }} />
+                                <Image src="/logo.png" alt="MedMind Logo" width={32} height={32} />
                             </div>
                         </div>
                         <CardTitle className="typo-display-sm text-center" style={{ color: 'var(--color-ink)' }}>

@@ -19,6 +19,7 @@ import {
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/client"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 interface Notebook {
     id: string
@@ -27,14 +28,8 @@ interface Notebook {
     document_count?: number
 }
 
-/* ── Mad Mind Logo Icon ── */
-const MadMindLogo = () => (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="28" height="28" rx="6" fill="var(--color-primary)" />
-        <path d="M14 6L14 22M6 14L22 14M8.5 8.5L19.5 19.5M19.5 8.5L8.5 19.5" stroke="var(--color-on-primary)" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-)
-
+/* ── MedMind Logo Icon ── */
+// Using logo.png via Image component instead of SVG icon
 export default function DashboardHome() {
     const [darkMode, setDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -223,8 +218,8 @@ export default function DashboardHome() {
                 }}>
                     {/* Left: Logo + Wordmark */}
                     <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', textDecoration: 'none' }}>
-                        <MadMindLogo />
-                        <span className="typo-title-md" style={{ color: 'var(--color-ink)' }}>Mad Mind</span>
+                        <Image src="/logo.png" alt="MedMind Logo" width={28} height={28} />
+                        <span className="typo-title-md" style={{ color: 'var(--color-ink)' }}>MedMind</span>
                     </Link>
 
                     {/* Right: Greeting + Toggle + Logout */}
