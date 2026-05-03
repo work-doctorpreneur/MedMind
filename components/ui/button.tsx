@@ -4,23 +4,24 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-    "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+    "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
     {
         variants: {
             variant: {
-                default: "bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90",
-                destructive: "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/25 hover:bg-destructive/90",
-                outline: "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground",
-                secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                ghost: "hover:bg-accent hover:text-accent-foreground",
-                link: "text-primary underline-offset-4 hover:underline",
-                gradient: "bg-gradient-to-r from-[var(--gradient-start)] to-[var(--gradient-end)] text-white shadow-lg hover:opacity-90",
+                default: "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] typo-button",
+                destructive: "bg-[var(--color-error)] text-[var(--color-on-primary)] hover:bg-[var(--color-error)]/90",
+                outline: "border border-[var(--color-hairline-strong)] bg-[var(--color-surface-card)] hover:bg-[var(--color-surface-strong)] text-[var(--color-ink)]",
+                secondary: "bg-[var(--color-surface-card)] text-[var(--color-ink)] border border-[var(--color-hairline-strong)] hover:bg-[var(--color-surface-strong)]",
+                ghost: "hover:bg-[var(--color-surface-strong)] text-[var(--color-muted)] hover:text-[var(--color-ink)]",
+                link: "text-[var(--color-text-link)] underline-offset-4 hover:underline",
+                gradient: "bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-primary-active)] typo-button",
+                "dark-secondary": "bg-[var(--color-surface-dark-elevated)] text-[var(--color-on-dark)] border border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.3)]",
             },
             size: {
-                default: "h-11 px-5 py-2",
-                sm: "h-9 rounded-md px-3 text-xs",
-                lg: "h-12 rounded-xl px-8 text-base",
-                icon: "h-10 w-10",
+                default: "h-10 px-[18px] py-[10px] rounded-[var(--rounded-md)]",
+                sm: "h-9 rounded-[var(--rounded-md)] px-3 text-xs",
+                lg: "h-12 rounded-[var(--rounded-md)] px-8 text-base",
+                icon: "h-10 w-10 rounded-[var(--rounded-md)]",
             },
         },
         defaultVariants: {

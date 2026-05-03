@@ -132,7 +132,8 @@ const studioActions = [
     { id: "flashcards", icon: GraduationCap, label: "Flashcards", description: "Study key concepts" },
     { id: "quiz", icon: HelpCircle, label: "Quiz", description: "Test your knowledge" },
     { id: "infographic", icon: Image, label: "Infographic", description: "Visual summaries" },
-    { id: "faq", icon: MessageSquareQuote, label: "FAQ", description: "Questions and answers" },
+    { id: "faq", icon: MessageSquareQuote, label: "FAQ", description: "Generated from your documents" },
+    { id: "notes", icon: PenTool, label: "Notes", description: "Capture key insights" },
 ]
 
 const audioTypes = [
@@ -1113,113 +1114,148 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
-            {/* Navbar */}
-            <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
-                <div className="max-w-full mx-auto px-4">
-                    <div className="flex items-center justify-between h-14">
-                        <div className="flex items-center gap-4">
-                            <Link href="/dashboard">
-                                <Button variant="ghost" size="icon" className="rounded-full">
-                                    <ChevronLeft className="w-5 h-5" />
-                                </Button>
-                            </Link>
-                            <div className="flex items-center gap-2">
-                                <Brain className="w-5 h-5 text-primary" />
-                                <span className="font-semibold text-foreground">{notebookName}</span>
-                            </div>
-                        </div>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={toggleDarkMode}
-                            className="rounded-full"
-                        >
-                            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </Button>
+            {/* ── Top Navigation Bar ── */}
+            <nav style={{
+                height: '64px',
+                background: 'var(--color-canvas)',
+                borderBottom: '1px solid var(--color-hairline)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 50,
+            }}>
+                <div style={{
+                    maxWidth: '100%',
+                    padding: '0 var(--spacing-base)',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-base)' }}>
+                        <Link href="/dashboard">
+                            <button style={{
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                color: 'var(--color-muted)', padding: 'var(--spacing-xs)',
+                                display: 'flex', alignItems: 'center',
+                            }}>
+                                <ChevronLeft size={20} />
+                            </button>
+                        </Link>
+                        <span className="typo-title-md" style={{ color: 'var(--color-ink)' }}>{notebookName}</span>
                     </div>
+                    <button
+                        onClick={toggleDarkMode}
+                        style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            padding: 'var(--spacing-xs)', color: 'var(--color-muted)',
+                            transition: 'color 0.2s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
+                    >
+                        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
                 </div>
             </nav>
 
             {/* Main Content */}
             <div className="flex-1 flex overflow-hidden">
-                {/* Left Column - Sources */}
-                <div className="w-72 border-r bg-card/50 flex flex-col">
-                    <div className="p-4 border-b">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="font-semibold text-foreground">Sources</h2>
-                            <span className="text-xs text-muted-foreground">{documents.length} files</span>
+                {/* ── Left Panel — Sources ── */}
+                <div style={{
+                    width: '260px', minWidth: '260px',
+                    background: 'var(--color-canvas-soft)',
+                    borderRight: '1px solid var(--color-hairline)',
+                    display: 'flex', flexDirection: 'column',
+                    overflow: 'hidden',
+                }}>
+                    <div style={{ padding: 'var(--spacing-base)' }}>
+                        {/* Header row */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--spacing-base)' }}>
+                            <span className="typo-title-sm" style={{ color: 'var(--color-ink)' }}>Sources</span>
+                            <span className="typo-caption-uppercase" style={{
+                                background: 'var(--color-surface-strong)',
+                                color: 'var(--color-ink)',
+                                padding: '4px 10px',
+                                borderRadius: 'var(--rounded-pill)',
+                            }}>{documents.length} files</span>
                         </div>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileUpload}
-                            className="hidden"
-                            multiple
-                            accept=".pdf,.doc,.docx,.txt,.md"
-                        />
+                        {/* Upload button */}
+                        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" multiple accept=".pdf,.doc,.docx,.txt,.md" />
                         {userRole === 'admin' && (
-                            <Button
-                                variant="outline"
-                                className="w-full gap-2"
+                            <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading}
+                                style={{
+                                    width: '100%', height: '40px',
+                                    background: 'var(--color-surface-card)',
+                                    border: '1px solid var(--color-hairline-strong)',
+                                    borderRadius: 'var(--rounded-md)',
+                                    color: 'var(--color-ink)',
+                                    fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 500,
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-xs)',
+                                    marginBottom: 'var(--spacing-base)',
+                                    transition: 'background 0.2s',
+                                }}
                             >
-                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                {isUploading ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Upload size={16} />}
                                 {isUploading ? "Uploading..." : "Upload Files"}
-                            </Button>
+                            </button>
                         )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                    {/* File list */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '0 var(--spacing-base) var(--spacing-base)' }}>
                         {isLoading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--spacing-xl) 0' }}>
+                                <Loader2 size={20} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite' }} />
                             </div>
                         ) : documents.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                <File className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                <p className="text-sm">No documents yet</p>
-                                <p className="text-xs">Upload files to get started</p>
+                            <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0', color: 'var(--color-muted)' }}>
+                                <File size={32} style={{ margin: '0 auto var(--spacing-xs)', opacity: 0.5 }} />
+                                <p className="typo-body-sm">No documents yet</p>
+                                <p className="typo-caption" style={{ color: 'var(--color-muted)' }}>Upload files to get started</p>
                             </div>
                         ) : (
                             documents.map((doc) => (
-                                <div key={doc.id} className="group p-3 rounded-xl bg-background hover:bg-accent transition-colors">
-                                    <div className="flex items-start gap-3">
-                                        <div className="p-2 bg-primary/10 rounded-lg relative">
-                                            <FileText className="w-4 h-4 text-primary" />
-                                            {processingDocs.has(doc.id) && (
-                                                <div className="absolute -top-1 -right-1">
-                                                    <Loader2 className="w-3 h-3 text-primary animate-spin" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate">{doc.filename}</p>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                                <span>{formatDate(doc.created_at)}</span>
-                                                {doc.metadata?.size && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span>{formatFileSize(doc.metadata.size)}</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                            {processingDocs.has(doc.id) && (
-                                                <p className="text-xs text-primary mt-1">Processing...</p>
-                                            )}
-                                        </div>
-                                        {userRole === 'admin' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="opacity-0 group-hover:opacity-100 h-8 w-8 text-destructive"
-                                                onClick={() => handleDeleteDocument(doc.id, doc.metadata)}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                <div
+                                    key={doc.id}
+                                    className="source-file-item"
+                                    style={{
+                                        padding: 'var(--spacing-sm) var(--spacing-base)',
+                                        display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-sm)',
+                                        borderRadius: 'var(--rounded-md)',
+                                        cursor: 'pointer',
+                                        transition: 'background 0.15s',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-strong)')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                >
+                                    <FileText size={16} style={{ color: 'var(--color-text-link)', marginTop: '2px', flexShrink: 0 }} />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p className="typo-body-sm" style={{ color: 'var(--color-ink)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {doc.filename}
+                                        </p>
+                                        <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '2px 0 0' }}>
+                                            {formatDate(doc.created_at)}
+                                            {doc.metadata?.size && <> &bull; {formatFileSize(doc.metadata.size)}</>}
+                                        </p>
+                                        {processingDocs.has(doc.id) && (
+                                            <p className="typo-caption" style={{ color: 'var(--color-text-link)', margin: '2px 0 0' }}>Processing...</p>
                                         )}
                                     </div>
+                                    {userRole === 'admin' && (
+                                        <button
+                                            onClick={() => handleDeleteDocument(doc.id, doc.metadata)}
+                                            className="source-delete-btn"
+                                            style={{
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                color: 'var(--color-error)', padding: '2px', opacity: 0,
+                                                transition: 'opacity 0.15s',
+                                            }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    )}
                                 </div>
                             ))
                         )}
@@ -1273,7 +1309,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                         <div className="p-1 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-lg">
                                             <Sparkles className="w-3 h-3 text-white" />
                                         </div>
-                                        <span className="text-xs font-medium text-muted-foreground">MedMind AI</span>
+                                        <span className="text-xs font-medium text-muted-foreground">Mad Mind AI</span>
                                     </div>
                                     <div className="text-sm leading-relaxed">
                                         Hello! Upload some documents and I'll help you analyze them. Ask me anything about the content.
@@ -1294,7 +1330,7 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                             <div className="p-1 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-lg">
                                                 <Sparkles className="w-3 h-3 text-white" />
                                             </div>
-                                            <span className="text-xs font-medium text-muted-foreground">MedMind AI</span>
+                                            <span className="text-xs font-medium text-muted-foreground">Mad Mind AI</span>
                                         </div>
                                     )}
                                     <div className="text-sm leading-relaxed prose prose-sm max-w-none">
@@ -1370,41 +1406,78 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                     </div>
                 </div>
 
-                {/* Right Column - Studio */}
-                <div className="w-80 border-l bg-card/50 flex flex-col">
-                    <div className="p-4 border-b">
-                        <h2 className="font-semibold text-foreground flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 text-primary" />
+                {/* ── Right Panel — Studio ── */}
+                <div style={{
+                    width: '280px', minWidth: '280px',
+                    background: 'var(--color-canvas-soft)',
+                    borderLeft: '1px solid var(--color-hairline)',
+                    display: 'flex', flexDirection: 'column',
+                    overflow: 'hidden',
+                }}>
+                    <div style={{ padding: 'var(--spacing-base)', borderBottom: '1px solid var(--color-hairline)' }}>
+                        <span className="typo-title-sm" style={{ color: 'var(--color-ink)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                            <Sparkles size={16} style={{ color: 'var(--color-text-link)' }} />
                             Studio
-                        </h2>
-                        <p className="text-xs text-muted-foreground mt-1">Generate learning artifacts</p>
+                        </span>
+                        <p className="typo-caption" style={{ color: 'var(--color-muted)', marginTop: '4px' }}>Generate learning artifacts</p>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4">
-                        <div className="grid grid-cols-2 gap-3">
+                    <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--spacing-base)' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-sm)' }}>
                             {studioActions.map((action) => (
                                 <button
                                     key={action.id}
                                     onClick={() => handleStudioAction(action.id)}
                                     disabled={isGenerating || documents.length === 0}
-                                    className="group p-4 rounded-xl border bg-background hover:bg-accent transition-all text-left disabled:opacity-50"
+                                    style={{
+                                        padding: 'var(--spacing-base)',
+                                        borderRadius: 'var(--rounded-lg)',
+                                        border: '1px solid var(--color-hairline-strong)',
+                                        background: 'var(--color-surface-card)',
+                                        cursor: 'pointer',
+                                        textAlign: 'left',
+                                        transition: 'all 0.15s',
+                                        opacity: (isGenerating || documents.length === 0) ? 0.5 : 1,
+                                    }}
+                                    onMouseEnter={e => {
+                                        if (!isGenerating && documents.length > 0) {
+                                            e.currentTarget.style.background = 'var(--color-surface-strong)'
+                                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)'
+                                        }
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.background = 'var(--color-surface-card)'
+                                        e.currentTarget.style.boxShadow = 'none'
+                                    }}
                                 >
-                                    <div className="p-2 bg-primary/10 rounded-lg w-fit mb-3">
+                                    <div style={{
+                                        width: '32px', height: '32px',
+                                        background: 'var(--color-surface-strong)',
+                                        borderRadius: 'var(--rounded-md)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        marginBottom: 'var(--spacing-sm)',
+                                    }}>
                                         {isGenerating && generatingType === action.id ? (
-                                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                            <Loader2 size={16} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite' }} />
                                         ) : (
-                                            <action.icon className="w-5 h-5 text-primary" />
+                                            <action.icon size={16} style={{ color: 'var(--color-ink)' }} />
                                         )}
                                     </div>
-                                    <h3 className="font-medium text-sm mb-1">{action.label}</h3>
-                                    <p className="text-xs text-muted-foreground">{action.description}</p>
+                                    <h3 className="typo-body-sm" style={{ color: 'var(--color-ink)', fontWeight: 600, margin: 0 }}>{action.label}</h3>
+                                    <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '2px 0 0' }}>{action.description}</p>
                                 </button>
                             ))}
                         </div>
 
                         {documents.length === 0 && (
-                            <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-dashed">
-                                <p className="text-sm text-muted-foreground text-center">Upload documents to unlock Studio</p>
+                            <div style={{
+                                marginTop: 'var(--spacing-lg)',
+                                padding: 'var(--spacing-base)',
+                                borderRadius: 'var(--rounded-lg)',
+                                border: '2px dashed var(--color-hairline)',
+                                textAlign: 'center',
+                            }}>
+                                <p className="typo-body-sm" style={{ color: 'var(--color-muted)' }}>Upload documents to unlock Studio</p>
                             </div>
                         )}
                     </div>
@@ -1700,45 +1773,47 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                 )
             }
 
-            {/* Audio Type Selector Modal */}
+            {/* ── Audio Type Selector Modal (Screen 3) ── */}
             {
                 showAudioTypeSelector && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-card dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-                            {/* Header */}
-                            <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-purple-600 to-pink-600">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Volume2 className="w-6 h-6 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', maxWidth: '420px', width: '100%', margin: '0 var(--spacing-base)', overflow: 'hidden' }}>
+                            {/* Black header bar */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <Volume2 size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-xl font-bold text-white">Generate Audio</h2>
-                                        <p className="text-sm text-white/80">Choose an audio format</p>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>Generate Audio</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Choose an audio format</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowAudioTypeSelector(false)}
-                                    className="text-white hover:bg-white/20"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => setShowAudioTypeSelector(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Audio Type Grid */}
-                            <div className="p-6 grid grid-cols-2 gap-4">
+                            <div style={{ padding: 'var(--spacing-lg)', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-base)' }}>
                                 {audioTypes.map((type) => (
                                     <button
                                         key={type.id}
                                         onClick={() => generateAudio(type.id)}
-                                        className="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all text-left group"
+                                        style={{
+                                            padding: 'var(--spacing-base)',
+                                            borderRadius: 'var(--rounded-lg)',
+                                            border: '1px solid var(--color-hairline-strong)',
+                                            background: 'var(--color-surface-card)',
+                                            cursor: 'pointer', textAlign: 'left',
+                                            transition: 'all 0.15s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-ink)'; e.currentTarget.style.background = 'var(--color-surface-strong)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-hairline-strong)'; e.currentTarget.style.background = 'var(--color-surface-card)' }}
                                     >
-                                        <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg w-fit mb-3 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50">
-                                            <type.icon className="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:text-purple-600" />
+                                        <div style={{ width: '32px', height: '32px', background: 'var(--color-surface-strong)', borderRadius: 'var(--rounded-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--spacing-sm)' }}>
+                                            <type.icon size={16} style={{ color: 'var(--color-ink)' }} />
                                         </div>
-                                        <h3 className="font-semibold text-purple-600 dark:text-purple-300 group-hover:text-purple-700 dark:group-hover:text-purple-200">{type.label}</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{type.description}</p>
+                                        <h3 className="typo-body-sm" style={{ color: 'var(--color-ink)', fontWeight: 600, margin: 0 }}>{type.label}</h3>
+                                        <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '4px 0 0' }}>{type.description}</p>
                                     </button>
                                 ))}
                             </div>
@@ -1747,117 +1822,104 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                 )
             }
 
-            {/* Quiz Difficulty Selector Modal */}
+            {/* ── Quiz Difficulty Selector Modal ── */}
             {
                 showQuizDifficultySelector && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-                            {/* Header */}
-                            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-600">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <HelpCircle className="w-6 h-6 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', maxWidth: '420px', width: '100%', margin: '0 var(--spacing-base)', overflow: 'hidden' }}>
+                            {/* Black header */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <HelpCircle size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-xl font-bold text-white">Quiz Mode</h2>
-                                        <p className="text-sm text-white/80">Choose difficulty level</p>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>Quiz Mode</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Choose difficulty level</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowQuizDifficultySelector(false)}
-                                    className="text-white hover:bg-white/20"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => setShowQuizDifficultySelector(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Difficulty Options */}
-                            <div className="p-6 space-y-3">
-                                <button
-                                    onClick={() => generateQuiz('easy')}
-                                    className="w-full p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 transition-all text-left group flex items-center gap-4"
-                                >
-                                    <div className="p-3 bg-green-100 dark:bg-green-900/50 rounded-lg group-hover:bg-green-200 dark:group-hover:bg-green-800">
-                                        <Zap className="w-6 h-6 text-green-600 dark:text-green-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-green-600 dark:text-green-400 text-lg">Easy Mode</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">20 basic recall questions</p>
-                                    </div>
-                                </button>
-
-                                <button
-                                    onClick={() => generateQuiz('medium')}
-                                    className="w-full p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 transition-all text-left group flex items-center gap-4"
-                                >
-                                    <div className="p-3 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg group-hover:bg-yellow-200 dark:group-hover:bg-yellow-800">
-                                        <Brain className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-yellow-600 dark:text-yellow-400 text-lg">Medium Mode</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">20 application-based questions</p>
-                                    </div>
-                                </button>
-
-                                <button
-                                    onClick={() => generateQuiz('hard')}
-                                    className="w-full p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all text-left group flex items-center gap-4"
-                                >
-                                    <div className="p-3 bg-red-100 dark:bg-red-900/50 rounded-lg group-hover:bg-red-200 dark:group-hover:bg-red-800">
-                                        <Flame className="w-6 h-6 text-red-600 dark:text-red-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-red-600 dark:text-red-400 text-lg">Hard Mode</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400">20 challenging analytical questions</p>
-                                    </div>
-                                </button>
+                            <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                                {[
+                                    { level: 'easy', icon: Zap, label: 'Easy Mode', desc: '20 basic recall questions', color: 'var(--color-success)' },
+                                    { level: 'medium', icon: Brain, label: 'Medium Mode', desc: '20 application-based questions', color: 'var(--color-accent-amber)' },
+                                    { level: 'hard', icon: Flame, label: 'Hard Mode', desc: '20 challenging analytical questions', color: 'var(--color-error)' },
+                                ].map((opt) => (
+                                    <button
+                                        key={opt.level}
+                                        onClick={() => generateQuiz(opt.level)}
+                                        style={{
+                                            width: '100%', padding: 'var(--spacing-base)',
+                                            borderRadius: 'var(--rounded-lg)',
+                                            border: '1px solid var(--color-hairline-strong)',
+                                            background: 'var(--color-surface-card)',
+                                            cursor: 'pointer', textAlign: 'left',
+                                            display: 'flex', alignItems: 'center', gap: 'var(--spacing-base)',
+                                            transition: 'all 0.15s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-ink)'; e.currentTarget.style.background = 'var(--color-surface-strong)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-hairline-strong)'; e.currentTarget.style.background = 'var(--color-surface-card)' }}
+                                    >
+                                        <div style={{
+                                            width: '40px', height: '40px',
+                                            background: 'var(--color-surface-strong)',
+                                            borderRadius: 'var(--rounded-md)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <opt.icon size={20} style={{ color: opt.color }} />
+                                        </div>
+                                        <div>
+                                            <h3 className="typo-body-sm" style={{ color: 'var(--color-ink)', fontWeight: 600, margin: 0 }}>{opt.label}</h3>
+                                            <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '2px 0 0' }}>{opt.desc}</p>
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
                 )
             }
 
-            {/* Report Type Selector Modal */}
+            {/* ── Report Type Selector Modal ── */}
             {
                 showReportTypeSelector && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-card dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden">
-                            {/* Header */}
-                            <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <FileBarChart className="w-6 h-6 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', maxWidth: '480px', width: '100%', margin: '0 var(--spacing-base)', overflow: 'hidden' }}>
+                            {/* Black header */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <FileBarChart size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-xl font-bold text-white">Generate Report</h2>
-                                        <p className="text-sm text-white/80">Choose a report format</p>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>Generate Report</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Choose a report format</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowReportTypeSelector(false)}
-                                    className="text-white hover:bg-white/20"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => setShowReportTypeSelector(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
-                            {/* Report Type Grid */}
-                            <div className="p-6 grid grid-cols-2 gap-4">
+                            <div style={{ padding: 'var(--spacing-lg)', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--spacing-base)' }}>
                                 {reportTypes.map((type) => (
                                     <button
                                         key={type.id}
                                         onClick={() => generateReport(type.id)}
-                                        className="p-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all text-left group"
+                                        style={{
+                                            padding: 'var(--spacing-base)', borderRadius: 'var(--rounded-lg)',
+                                            border: '1px solid var(--color-hairline-strong)', background: 'var(--color-surface-card)',
+                                            cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-ink)'; e.currentTarget.style.background = 'var(--color-surface-strong)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-hairline-strong)'; e.currentTarget.style.background = 'var(--color-surface-card)' }}
                                     >
-                                        <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg w-fit mb-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50">
-                                            <type.icon className="w-5 h-5 text-slate-600 dark:text-slate-300 group-hover:text-blue-600" />
+                                        <div style={{ width: '32px', height: '32px', background: 'var(--color-surface-strong)', borderRadius: 'var(--rounded-md)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--spacing-sm)' }}>
+                                            <type.icon size={16} style={{ color: 'var(--color-ink)' }} />
                                         </div>
-                                        <h3 className="font-semibold text-blue-600 dark:text-blue-300 group-hover:text-blue-700 dark:group-hover:text-blue-200">{type.label}</h3>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{type.description}</p>
+                                        <h3 className="typo-body-sm" style={{ color: 'var(--color-ink)', fontWeight: 600, margin: 0 }}>{type.label}</h3>
+                                        <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: '4px 0 0' }}>{type.description}</p>
                                     </button>
                                 ))}
                             </div>
@@ -1869,43 +1931,36 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
             {/* Report Display Modal */}
             {
                 showReportModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] mx-4 flex flex-col overflow-hidden">
-                            {/* Header */}
-                            <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <FileBarChart className="w-5 h-5 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', width: '100%', maxWidth: '900px', height: '85vh', margin: '0 var(--spacing-base)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            {/* Black header */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <FileBarChart size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-lg font-bold text-white">
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>
                                             {reportType === 'faq' ? 'FAQ' : (reportTypes.find(t => t.id === reportType)?.label || 'Report')}
                                         </h2>
-                                        <p className="text-xs text-white/80">Generated from your documents</p>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>Generated from your documents</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowReportModal(false)}
-                                    className="text-white hover:bg-white/20"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => setShowReportModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Report Content */}
-                            <div className="flex-1 overflow-auto p-6 bg-white dark:bg-slate-800">
+                            <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--spacing-lg)', background: 'var(--color-canvas)' }}>
                                 {isLoadingReport ? (
-                                    <div className="h-full flex items-center justify-center">
-                                        <div className="text-center">
-                                            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-                                            <p className="text-slate-600 dark:text-slate-300">Generating your report...</p>
-                                            <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">This may take a moment</p>
+                                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <Loader2 size={32} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+                                            <p className="typo-body-sm" style={{ color: 'var(--color-body)' }}>Generating your report...</p>
+                                            <p className="typo-caption" style={{ color: 'var(--color-muted)', marginTop: '4px' }}>This may take a moment</p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="prose prose-slate dark:prose-invert max-w-none text-slate-800 dark:text-slate-100">
+                                    <div className="prose max-w-none" style={{ color: 'var(--color-body)' }}>
                                         {renderMarkdown(reportContent)}
                                     </div>
                                 )}
@@ -1913,35 +1968,35 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
 
                             {/* Footer Actions */}
                             {!isLoadingReport && reportContent && (
-                                <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+                                <div style={{ padding: 'var(--spacing-base) var(--spacing-lg)', borderTop: '1px solid var(--color-hairline)', background: 'var(--color-surface-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
                                     <Button
                                         variant="outline"
                                         onClick={() => {
                                             setShowReportModal(false)
                                             setShowReportTypeSelector(true)
                                         }}
-                                        className="gap-2"
+                                        style={{ gap: 'var(--spacing-xs)' }}
                                     >
-                                        <RotateCcw className="w-4 h-4" />
+                                        <RotateCcw size={14} />
                                         Change Type
                                     </Button>
-                                    <div className="flex gap-2">
+                                    <div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
                                         <Button
                                             variant="outline"
                                             onClick={() => {
                                                 navigator.clipboard.writeText(reportContent)
                                             }}
-                                            className="gap-2"
+                                            style={{ gap: 'var(--spacing-xs)' }}
                                         >
-                                            <Copy className="w-4 h-4" />
+                                            <Copy size={14} />
                                             Copy
                                         </Button>
                                         <Button
                                             variant="outline"
                                             onClick={() => window.print()}
-                                            className="gap-2"
+                                            style={{ gap: 'var(--spacing-xs)' }}
                                         >
-                                            <Printer className="w-4 h-4" />
+                                            <Printer size={14} />
                                             Print
                                         </Button>
                                         <Button
@@ -1954,9 +2009,9 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                                 a.click()
                                                 URL.revokeObjectURL(url)
                                             }}
-                                            className="gap-2 bg-blue-600 hover:bg-blue-700"
+                                            style={{ gap: 'var(--spacing-xs)' }}
                                         >
-                                            <Download className="w-4 h-4" />
+                                            <Download size={14} />
                                             Download
                                         </Button>
                                     </div>
@@ -1967,70 +2022,51 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                 )
             }
 
-            {/* Infographic Modal */}
+            {/* ── Infographic Modal ── */}
             {
                 showInfographicModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-card dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] mx-4 flex flex-col overflow-hidden">
-                            {/* Header */}
-                            <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-purple-600 to-pink-600">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Image className="w-5 h-5 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', width: '100%', maxWidth: '900px', height: '90vh', margin: '0 var(--spacing-base)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            {/* Black header */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <Image size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-lg font-bold text-white">Infographic</h2>
-                                        <p className="text-xs text-white/80">{infographicTitle || 'Visual summary of your documents'}</p>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>Infographic</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>{infographicTitle || 'Visual summary of your documents'}</p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowInfographicModal(false)}
-                                    className="text-white hover:bg-white/20"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => setShowInfographicModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
-                            {/* Infographic Content */}
-                            <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-slate-100 dark:bg-slate-900">
+                            {/* Content */}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-surface-card)' }}>
                                 {isLoadingInfographic ? (
-                                    <div className="text-center">
-                                        <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
-                                        <p className="text-slate-600 dark:text-slate-300 font-medium">Generating your infographic...</p>
-                                        <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">This may take 15-30 seconds</p>
+                                    <div style={{ textAlign: 'center' }}>
+                                        <Loader2 size={40} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite', margin: '0 auto var(--spacing-base)' }} />
+                                        <p className="typo-body-sm" style={{ color: 'var(--color-body)', fontWeight: 500 }}>Generating your infographic...</p>
+                                        <p className="typo-caption" style={{ color: 'var(--color-muted)', marginTop: 'var(--spacing-xs)' }}>This may take 15-30 seconds</p>
                                     </div>
                                 ) : infographicImage ? (
-                                    <img
-                                        src={infographicImage}
-                                        alt={infographicTitle || 'Generated Infographic'}
-                                        className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                                    />
+                                    <img src={infographicImage} alt={infographicTitle || 'Generated Infographic'} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 'var(--rounded-lg)' }} />
                                 ) : (
-                                    <div className="text-center text-slate-500 dark:text-slate-400">
-                                        <Image className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                                    <div style={{ textAlign: 'center', color: 'var(--color-muted)' }}>
+                                        <Image size={48} style={{ margin: '0 auto var(--spacing-base)', opacity: 0.3 }} />
                                         <p>Failed to generate infographic</p>
-                                        <Button
-                                            onClick={generateInfographic}
-                                            className="mt-4 bg-purple-600 hover:bg-purple-700"
-                                        >
+                                        <Button onClick={generateInfographic} style={{ marginTop: 'var(--spacing-base)' }}>
                                             Try Again
                                         </Button>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Footer Actions */}
+                            {/* Footer */}
                             {!isLoadingInfographic && infographicImage && (
-                                <div className="p-4 border-t bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
-                                    <Button
-                                        variant="outline"
-                                        onClick={generateInfographic}
-                                        className="gap-2"
-                                    >
-                                        <RotateCcw className="w-4 h-4" />
-                                        Regenerate
+                                <div style={{ padding: 'var(--spacing-base) var(--spacing-lg)', borderTop: '1px solid var(--color-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                                    <Button variant="outline" onClick={generateInfographic} style={{ gap: 'var(--spacing-xs)' }}>
+                                        <RotateCcw size={14} /> Regenerate
                                     </Button>
                                     <Button
                                         onClick={() => {
@@ -2039,10 +2075,9 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                             link.download = `${infographicTitle || 'infographic'}.png`
                                             link.click()
                                         }}
-                                        className="gap-2 bg-purple-600 hover:bg-purple-700"
+                                        style={{ gap: 'var(--spacing-xs)' }}
                                     >
-                                        <Download className="w-4 h-4" />
-                                        Download
+                                        <Download size={14} /> Download
                                     </Button>
                                 </div>
                             )}
@@ -2051,64 +2086,45 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                 )
             }
 
-            {/* Audio Overview Modal */}
+            {/* ── Audio Overview Modal (Screen 4) ── */}
             {
                 showAudioModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-card dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 flex flex-col overflow-hidden">
-                            {/* Header */}
-                            <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-600">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white/20 rounded-lg">
-                                        <Volume2 className="w-5 h-5 text-white" />
-                                    </div>
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                        <div style={{ background: 'var(--color-canvas)', borderRadius: 'var(--rounded-xl)', maxWidth: '480px', width: '100%', margin: '0 var(--spacing-base)', overflow: 'hidden' }}>
+                            {/* Black header bar */}
+                            <div style={{ background: 'var(--color-surface-dark)', padding: 'var(--spacing-base) var(--spacing-lg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                    <Volume2 size={20} style={{ color: 'var(--color-on-dark)' }} />
                                     <div>
-                                        <h2 className="text-lg font-bold text-white">{audioTitle || 'Audio Overview'}</h2>
-                                        <p className="text-xs text-white/80">{audioType === 'pixar_story' ? 'Fun storytelling like a children\'s tale' : 'Podcast-style summary'}</p>
+                                        <h2 className="typo-title-md" style={{ color: 'var(--color-on-dark)', margin: 0 }}>{audioTitle || 'Audio Overview'}</h2>
+                                        <p className="typo-caption" style={{ color: 'var(--color-on-dark-soft)', margin: 0 }}>
+                                            {audioType === 'pixar_story' ? 'Fun storytelling like a children\'s tale' : 'Podcast-style summary'}
+                                        </p>
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                        setShowAudioModal(false)
-                                        if (audioUrl) URL.revokeObjectURL(audioUrl)
-                                    }}
-                                    className="text-white hover:bg-white/20"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <button onClick={() => { setShowAudioModal(false); if (audioUrl) URL.revokeObjectURL(audioUrl) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-on-dark-soft)' }}>
+                                    <X size={20} />
+                                </button>
                             </div>
 
                             {/* Audio Content */}
-                            <div className="p-6 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
+                            <div style={{ padding: 'var(--spacing-lg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                                 {isLoadingAudio ? (
-                                    <div className="text-center py-8">
-                                        <Loader2 className="w-12 h-12 animate-spin text-emerald-600 mx-auto mb-4" />
-                                        <p className="text-slate-600 font-medium">Creating your audio overview...</p>
-                                        <p className="text-sm text-slate-400 mt-2">Generating script and synthesizing speech</p>
-                                        <p className="text-xs text-slate-400 mt-1">This may take 30-60 seconds</p>
+                                    <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0' }}>
+                                        <Loader2 size={40} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite', margin: '0 auto var(--spacing-base)' }} />
+                                        <p className="typo-body-sm" style={{ color: 'var(--color-body)', fontWeight: 500 }}>Creating your audio overview...</p>
+                                        <p className="typo-caption" style={{ color: 'var(--color-muted)', marginTop: 'var(--spacing-xs)' }}>This may take 30-60 seconds</p>
                                     </div>
                                 ) : audioUrl ? (
-                                    <div className="w-full space-y-4">
-                                        <div className="bg-gradient-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 rounded-xl p-6">
-                                            <audio
-                                                controls
-                                                controlsList="nodownload"
-                                                className="w-full"
-                                                src={audioUrl}
-                                            >
+                                    <div style={{ width: '100%' }}>
+                                        <div style={{ background: 'var(--color-surface-card)', borderRadius: 'var(--rounded-lg)', padding: 'var(--spacing-lg)' }}>
+                                            <audio controls controlsList="nodownload" style={{ width: '100%' }} src={audioUrl}>
                                                 Your browser does not support the audio element.
                                             </audio>
                                         </div>
-                                        <div className="flex items-center justify-between">
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => generateAudio(audioType)}
-                                                className="gap-2"
-                                            >
-                                                <RotateCcw className="w-4 h-4" />
-                                                Regenerate
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--spacing-base)' }}>
+                                            <Button variant="outline" onClick={() => generateAudio(audioType)} style={{ gap: 'var(--spacing-xs)' }}>
+                                                <RotateCcw size={14} /> Regenerate
                                             </Button>
                                             <Button
                                                 onClick={async () => {
@@ -2128,21 +2144,17 @@ export default function NotebookWorkspaceContent({ notebookId }: NotebookWorkspa
                                                         console.error('Download error:', e)
                                                     }
                                                 }}
-                                                className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                                                style={{ gap: 'var(--spacing-xs)' }}
                                             >
-                                                <Download className="w-4 h-4" />
-                                                Download
+                                                <Download size={14} /> Download
                                             </Button>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="text-center py-8 text-slate-500">
-                                        <Volume2 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
+                                    <div style={{ textAlign: 'center', padding: 'var(--spacing-xl) 0', color: 'var(--color-muted)' }}>
+                                        <Volume2 size={48} style={{ margin: '0 auto var(--spacing-base)', opacity: 0.3 }} />
                                         <p>Failed to generate audio</p>
-                                        <Button
-                                            onClick={() => generateAudio(audioType)}
-                                            className="mt-4 bg-emerald-600 hover:bg-emerald-700"
-                                        >
+                                        <Button onClick={() => generateAudio(audioType)} style={{ marginTop: 'var(--spacing-base)' }}>
                                             Try Again
                                         </Button>
                                     </div>

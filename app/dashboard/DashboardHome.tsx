@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import {
     Plus,
     Search,
@@ -13,7 +11,6 @@ import {
     Moon,
     Sun,
     LogOut,
-    Brain,
     X,
     Loader2,
     Trash2,
@@ -30,8 +27,21 @@ interface Notebook {
     document_count?: number
 }
 
+/* ── Mad Mind Logo Icon ── */
+const MadMindLogo = () => (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="28" height="28" rx="6" fill="var(--color-primary)" />
+        <path d="M14 6L14 22M6 14L22 14M8.5 8.5L19.5 19.5M19.5 8.5L8.5 19.5" stroke="var(--color-on-primary)" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+)
+
 export default function DashboardHome() {
-    const [darkMode, setDarkMode] = useState(false)
+    const [darkMode, setDarkMode] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('madmind-dark-mode') === 'true'
+        }
+        return false
+    })
     const [searchQuery, setSearchQuery] = useState("")
     const [user, setUser] = useState<{ id: string, firstName: string, lastName: string } | null>(null)
     const [userRole, setUserRole] = useState<'admin' | 'doctor'>('doctor')
@@ -44,6 +54,17 @@ export default function DashboardHome() {
     const [isDeleting, setIsDeleting] = useState(false)
     const router = useRouter()
     const supabase = createClient()
+
+    useEffect(() => {
+        const savedDarkMode = localStorage.getItem('madmind-dark-mode')
+        if (savedDarkMode === 'true') {
+            setDarkMode(true)
+            document.documentElement.classList.add('dark')
+        } else {
+            setDarkMode(false)
+            document.documentElement.classList.remove('dark')
+        }
+    }, [])
 
     useEffect(() => {
         const initDashboard = async () => {
@@ -162,16 +183,7 @@ export default function DashboardHome() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
-        const now = new Date()
-        const diffMs = now.getTime() - date.getTime()
-        const diffMins = Math.round(diffMs / 60000)
-        const diffHours = Math.round(diffMs / 3600000)
-        const diffDays = Math.round(diffMs / 86400000)
-
-        if (diffMins < 60) return `${diffMins} min ago`
-        if (diffHours < 24) return `${diffHours} hours ago`
-        if (diffDays < 7) return `${diffDays} days ago`
-        return date.toLocaleDateString()
+        return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' })
     }
 
     const filteredNotebooks = notebooks.filter(nb =>
@@ -179,89 +191,188 @@ export default function DashboardHome() {
     )
 
     const toggleDarkMode = () => {
-        setDarkMode(!darkMode)
-        document.documentElement.classList.toggle("dark")
+        const newDarkMode = !darkMode
+        setDarkMode(newDarkMode)
+        localStorage.setItem('madmind-dark-mode', String(newDarkMode))
+        if (newDarkMode) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
     }
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Navbar */}
-            <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <Link href="/dashboard" className="flex items-center gap-3">
-                            <div className="p-2 bg-gradient-to-br from-[var(--gradient-start)] to-[var(--gradient-end)] rounded-xl">
-                                <Brain className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xl font-bold gradient-text">MedMind</span>
-                        </Link>
+        <div style={{ minHeight: '100vh', background: 'var(--color-canvas)' }}>
+            {/* ── Top Navigation Bar ── */}
+            <nav style={{
+                height: '64px',
+                background: 'var(--color-canvas)',
+                borderBottom: '1px solid var(--color-hairline)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 50,
+            }}>
+                <div style={{
+                    maxWidth: '1200px',
+                    margin: '0 auto',
+                    padding: '0 var(--spacing-lg)',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
+                    {/* Left: Logo + Wordmark */}
+                    <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', textDecoration: 'none' }}>
+                        <MadMindLogo />
+                        <span className="typo-title-md" style={{ color: 'var(--color-ink)' }}>Mad Mind</span>
+                    </Link>
 
-                        <div className="flex items-center gap-4">
-                            <span className="text-sm text-muted-foreground hidden sm:block">
-                                Welcome, <span className="font-semibold text-foreground">
-                                    {user ? `${user.firstName} ${user.lastName}` : "Doctor"}!
-                                </span>
-                            </span>
-
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={toggleDarkMode}
-                                className="rounded-full"
-                            >
-                                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                            </Button>
-
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={handleLogout}
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </Button>
-                        </div>
+                    {/* Right: Greeting + Toggle + Logout */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-base)' }}>
+                        <span className="typo-body-sm" style={{ color: 'var(--color-body)' }}>
+                            Welcome, {user ? `${user.firstName} ${user.lastName}` : "Doctor"}!
+                        </span>
+                        <button
+                            onClick={toggleDarkMode}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 'var(--spacing-xxs)',
+                                color: 'var(--color-muted)',
+                                transition: 'color 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
+                        >
+                            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 'var(--spacing-xxs)',
+                                color: 'var(--color-muted)',
+                                transition: 'color 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
+                        >
+                            <LogOut size={20} />
+                        </button>
                     </div>
                 </div>
             </nav>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            {/* ── Main Content ── */}
+            <main style={{
+                maxWidth: '1200px',
+                margin: '0 auto',
+                padding: `var(--spacing-xxl) var(--spacing-lg) var(--spacing-section)`,
+            }}>
+                {/* Page Header */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    marginBottom: 'var(--spacing-xl)',
+                }}>
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground">Your Notebooks</h1>
-                        <p className="text-muted-foreground mt-1">Organize your medical documents and insights</p>
+                        <h1 className="typo-display-md" style={{ color: 'var(--color-ink)', margin: 0 }}>
+                            Your Notebooks
+                        </h1>
+                        <p className="typo-body-md" style={{ color: 'var(--color-body)', marginTop: 'var(--spacing-xs)' }}>
+                            Organize your documents and insights
+                        </p>
                     </div>
                     {userRole === 'admin' && (
                         <Button
-                            variant="gradient"
-                            className="gap-2 shadow-lg hover:shadow-primary/25 transition-all"
                             onClick={() => setShowCreateModal(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'var(--spacing-xs)',
+                            }}
                         >
-                            <Plus className="w-4 h-4" />
+                            <Plus size={16} />
                             Create Notebook
                         </Button>
                     )}
                 </div>
 
-                <div className="relative mb-8">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search notebooks..."
-                        className="pl-10 max-w-md bg-card/50"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                {/* Search Bar */}
+                <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+                    <div style={{
+                        position: 'relative',
+                        width: '320px',
+                        maxWidth: '100%',
+                    }}>
+                        <Search
+                            size={16}
+                            style={{
+                                position: 'absolute',
+                                left: 'var(--spacing-base)',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: 'var(--color-muted)',
+                            }}
+                        />
+                        <input
+                            type="text"
+                            placeholder="Search notebooks..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{
+                                width: '100%',
+                                height: '44px',
+                                padding: 'var(--spacing-sm) var(--spacing-base) var(--spacing-sm) 44px',
+                                background: 'var(--color-surface-card)',
+                                border: '1px solid var(--color-hairline-strong)',
+                                borderRadius: 'var(--rounded-md)',
+                                fontFamily: 'var(--font-body)',
+                                fontSize: '14px',
+                                color: 'var(--color-ink)',
+                                outline: 'none',
+                                transition: 'border-color 0.2s',
+                            }}
+                            onFocus={e => (e.target.style.borderWidth = '2px', e.target.style.borderColor = 'var(--color-ink)')}
+                            onBlur={e => (e.target.style.borderWidth = '1px', e.target.style.borderColor = 'var(--color-hairline-strong)')}
+                        />
+                    </div>
                 </div>
 
+                {/* Notebook Cards Grid */}
                 {isLoading ? (
-                    <div className="flex items-center justify-center py-16">
-                        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--spacing-section) 0' }}>
+                        <Loader2 size={32} style={{ color: 'var(--color-ink)', animation: 'spin 1s linear infinite' }} />
                     </div>
                 ) : filteredNotebooks.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(4, 1fr)',
+                        gap: 'var(--spacing-lg)',
+                    }} className="notebook-grid">
                         {filteredNotebooks.map((notebook) => (
-                            <Link href={`/dashboard/${notebook.id}`} key={notebook.id}>
-                                <div className="group bg-card hover:bg-accent/50 border rounded-2xl p-6 transition-all hover:shadow-lg cursor-pointer h-full flex flex-col relative">
+                            <Link href={`/dashboard/${notebook.id}`} key={notebook.id} style={{ textDecoration: 'none' }}>
+                                <div
+                                    className="notebook-card"
+                                    style={{
+                                        background: 'var(--color-surface-card)',
+                                        borderRadius: 'var(--rounded-lg)',
+                                        padding: 'var(--spacing-lg)',
+                                        border: '1px solid var(--color-hairline-strong)',
+                                        cursor: 'pointer',
+                                        transition: 'box-shadow 0.2s ease',
+                                        position: 'relative',
+                                        height: '100%',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                    }}
+                                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)')}
+                                    onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+                                >
                                     {/* Delete Button - Admin Only */}
                                     {userRole === 'admin' && (
                                         <button
@@ -270,28 +381,69 @@ export default function DashboardHome() {
                                                 e.stopPropagation()
                                                 setDeletingNotebook(notebook)
                                             }}
-                                            className="absolute top-3 right-3 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-destructive/10 hover:bg-destructive/20 text-destructive"
-                                            title="Delete notebook"
+                                            className="notebook-delete-btn"
+                                            style={{
+                                                position: 'absolute',
+                                                top: 'var(--spacing-sm)',
+                                                right: 'var(--spacing-sm)',
+                                                padding: 'var(--spacing-xs)',
+                                                borderRadius: 'var(--rounded-md)',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                opacity: 0,
+                                                transition: 'opacity 0.2s',
+                                                color: 'var(--color-error)',
+                                            }}
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Trash2 size={16} />
                                         </button>
                                     )}
 
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
-                                            <FolderOpen className="w-6 h-6 text-primary" />
-                                        </div>
+                                    {/* Folder icon plate */}
+                                    <div style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        background: 'var(--color-surface-strong)',
+                                        borderRadius: 'var(--rounded-md)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <FolderOpen size={20} style={{ color: 'var(--color-ink)' }} />
                                     </div>
 
-                                    <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2">{notebook.name}</h3>
+                                    {/* Notebook title */}
+                                    <h3
+                                        className="typo-title-md"
+                                        style={{
+                                            color: 'var(--color-ink)',
+                                            marginTop: 'var(--spacing-sm)',
+                                            marginBottom: 0,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                        }}
+                                    >
+                                        {notebook.name}
+                                    </h3>
 
-                                    <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
-                                        <div className="flex items-center gap-1.5">
-                                            <FileText className="w-3 h-3" />
+                                    {/* Doc count + date */}
+                                    <div style={{
+                                        marginTop: 'auto',
+                                        paddingTop: 'var(--spacing-sm)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 'var(--spacing-md)',
+                                    }}>
+                                        <div className="typo-body-sm" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xxs)', color: 'var(--color-text-link)' }}>
+                                            <FileText size={14} />
                                             <span>{notebook.document_count} documents</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className="w-3 h-3" />
+                                        <div className="typo-body-sm" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xxs)', color: 'var(--color-muted)' }}>
+                                            <Clock size={14} />
                                             <span>{formatDate(notebook.created_at)}</span>
                                         </div>
                                     </div>
@@ -300,136 +452,239 @@ export default function DashboardHome() {
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-2xl bg-card/50">
-                        <div className="p-4 bg-muted rounded-full mb-4">
-                            <FolderOpen className="w-8 h-8 text-muted-foreground" />
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 'var(--spacing-section) 0',
+                        textAlign: 'center',
+                        border: '2px dashed var(--color-hairline)',
+                        borderRadius: 'var(--rounded-xl)',
+                        background: 'var(--color-surface-card)',
+                    }}>
+                        <div style={{
+                            width: '56px',
+                            height: '56px',
+                            background: 'var(--color-surface-strong)',
+                            borderRadius: 'var(--rounded-full)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: 'var(--spacing-base)',
+                        }}>
+                            <FolderOpen size={24} style={{ color: 'var(--color-muted)' }} />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">No notebooks yet</h3>
-                        <p className="text-muted-foreground mb-6 max-w-sm">
-                            Create your first notebook to start organizing and analyzing your medical documents.
+                        <h3 className="typo-title-md" style={{ color: 'var(--color-ink)', marginBottom: 'var(--spacing-xs)' }}>
+                            No notebooks yet
+                        </h3>
+                        <p className="typo-body-sm" style={{ color: 'var(--color-muted)', marginBottom: 'var(--spacing-lg)', maxWidth: '320px' }}>
+                            Create your first notebook to start organizing and analyzing your documents.
                         </p>
-                        <Button
-                            variant="gradient"
-                            className="gap-2"
-                            onClick={() => setShowCreateModal(true)}
-                        >
-                            <Plus className="w-4 h-4" />
+                        <Button onClick={() => setShowCreateModal(true)} style={{ gap: 'var(--spacing-xs)' }}>
+                            <Plus size={16} />
                             Create Notebook
                         </Button>
                     </div>
                 )}
             </main>
 
-            {/* Create Notebook Modal */}
+            {/* ── Create Notebook Modal ── */}
             {showCreateModal && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <Card className="w-full max-w-md">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                        <FolderOpen className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <h2 className="text-xl font-semibold">Create Notebook</h2>
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 50,
+                    padding: 'var(--spacing-base)',
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '420px',
+                        background: 'var(--color-canvas)',
+                        borderRadius: 'var(--rounded-xl)',
+                        overflow: 'hidden',
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            padding: 'var(--spacing-lg)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    background: 'var(--color-surface-strong)',
+                                    borderRadius: 'var(--rounded-md)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    <FolderOpen size={18} style={{ color: 'var(--color-ink)' }} />
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="rounded-full"
-                                    onClick={() => setShowCreateModal(false)}
-                                >
-                                    <X className="w-4 h-4" />
-                                </Button>
+                                <h2 className="typo-title-md" style={{ color: 'var(--color-ink)', margin: 0 }}>Create Notebook</h2>
                             </div>
+                            <button
+                                onClick={() => setShowCreateModal(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'var(--color-muted)',
+                                    padding: 'var(--spacing-xxs)',
+                                }}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
 
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Notebook Name</label>
-                                    <Input
-                                        placeholder="e.g., Patient Records Q1 2026"
-                                        value={newNotebookName}
-                                        onChange={(e) => setNewNotebookName(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleCreateNotebook()}
-                                        autoFocus
-                                    />
-                                </div>
+                        {/* Body */}
+                        <div style={{ padding: '0 var(--spacing-lg) var(--spacing-lg)' }}>
+                            <label className="typo-body-sm" style={{ color: 'var(--color-body)', display: 'block', marginBottom: 'var(--spacing-xs)' }}>
+                                Notebook Name
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g., Research Notes Q1 2026"
+                                value={newNotebookName}
+                                onChange={(e) => setNewNotebookName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateNotebook()}
+                                autoFocus
+                                style={{
+                                    width: '100%',
+                                    height: '44px',
+                                    padding: 'var(--spacing-sm) var(--spacing-base)',
+                                    background: 'var(--color-surface-card)',
+                                    border: '1px solid var(--color-hairline-strong)',
+                                    borderRadius: 'var(--rounded-md)',
+                                    fontFamily: 'var(--font-body)',
+                                    fontSize: '14px',
+                                    color: 'var(--color-ink)',
+                                    outline: 'none',
+                                }}
+                            />
 
-                                <div className="flex gap-3 pt-2">
-                                    <Button
-                                        variant="outline"
-                                        className="flex-1"
-                                        onClick={() => setShowCreateModal(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button
-                                        variant="gradient"
-                                        className="flex-1"
-                                        onClick={handleCreateNotebook}
-                                        disabled={!newNotebookName.trim() || isCreating}
-                                    >
-                                        {isCreating ? (
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                        ) : (
-                                            "Create"
-                                        )}
-                                    </Button>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {deletingNotebook && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <Card className="w-full max-w-md">
-                        <CardContent className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-3 bg-destructive/10 rounded-full">
-                                    <AlertTriangle className="w-6 h-6 text-destructive" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-semibold">Delete Notebook</h2>
-                                    <p className="text-sm text-muted-foreground">This action cannot be undone</p>
-                                </div>
-                            </div>
-
-                            <p className="text-sm text-muted-foreground mb-6">
-                                Are you sure you want to delete <span className="font-semibold text-foreground">"{deletingNotebook.name}"</span>?
-                                This will permanently delete all documents, embeddings, and chat history associated with this notebook.
-                            </p>
-
-                            <div className="flex gap-3">
+                            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginTop: 'var(--spacing-base)' }}>
                                 <Button
                                     variant="outline"
-                                    className="flex-1"
-                                    onClick={() => setDeletingNotebook(null)}
-                                    disabled={isDeleting}
+                                    onClick={() => setShowCreateModal(false)}
+                                    style={{ flex: 1 }}
                                 >
                                     Cancel
                                 </Button>
                                 <Button
-                                    variant="destructive"
-                                    className="flex-1"
-                                    onClick={handleDeleteNotebook}
-                                    disabled={isDeleting}
+                                    onClick={handleCreateNotebook}
+                                    disabled={!newNotebookName.trim() || isCreating}
+                                    style={{ flex: 1 }}
                                 >
-                                    {isDeleting ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    {isCreating ? (
+                                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                                     ) : (
-                                        <>
-                                            <Trash2 className="w-4 h-4 mr-2" />
-                                            Delete
-                                        </>
+                                        "Create"
                                     )}
                                 </Button>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 </div>
             )}
+
+            {/* ── Delete Confirmation Modal ── */}
+            {deletingNotebook && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 50,
+                    padding: 'var(--spacing-base)',
+                }}>
+                    <div style={{
+                        width: '100%',
+                        maxWidth: '420px',
+                        background: 'var(--color-canvas)',
+                        borderRadius: 'var(--rounded-xl)',
+                        padding: 'var(--spacing-lg)',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-base)' }}>
+                            <div style={{
+                                width: '40px',
+                                height: '40px',
+                                background: 'rgba(198,69,69,0.1)',
+                                borderRadius: 'var(--rounded-full)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <AlertTriangle size={20} style={{ color: 'var(--color-error)' }} />
+                            </div>
+                            <div>
+                                <h2 className="typo-title-md" style={{ color: 'var(--color-ink)', margin: 0 }}>Delete Notebook</h2>
+                                <p className="typo-caption" style={{ color: 'var(--color-muted)', margin: 0 }}>This action cannot be undone</p>
+                            </div>
+                        </div>
+
+                        <p className="typo-body-sm" style={{ color: 'var(--color-body)', marginBottom: 'var(--spacing-lg)' }}>
+                            Are you sure you want to delete <strong style={{ color: 'var(--color-ink)' }}>"{deletingNotebook.name}"</strong>?
+                            This will permanently delete all documents, embeddings, and chat history.
+                        </p>
+
+                        <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                            <Button
+                                variant="outline"
+                                onClick={() => setDeletingNotebook(null)}
+                                disabled={isDeleting}
+                                style={{ flex: 1 }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleDeleteNotebook}
+                                disabled={isDeleting}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}
+                            >
+                                {isDeleting ? (
+                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                ) : (
+                                    <>
+                                        <Trash2 size={16} />
+                                        Delete
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Responsive Grid Styles ── */}
+            <style jsx global>{`
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                .notebook-card:hover .notebook-delete-btn {
+                    opacity: 1 !important;
+                }
+                @media (max-width: 1024px) {
+                    .notebook-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                    }
+                }
+                @media (max-width: 640px) {
+                    .notebook-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+            `}</style>
         </div>
     )
 }
